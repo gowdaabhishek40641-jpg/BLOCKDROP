@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>BlockDrop | Puzzle Game</title>
+    <title>BLOCKDROP | Arcade</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,45 +13,144 @@
 
     <main class="game-container">
 
-        <header>
-            <h1>BLOCK<span>DROP</span></h1>
-            <p>Drop • Match • Clear • Level Up</p>
+        <header class="game-header">
+            <div>
+                <p class="mini-title">ARCADE SYSTEM</p>
+                <h1>BLOCK<span>DROP</span></h1>
+                <p class="subtitle">DROP • MATCH • CLEAR • LEVEL UP</p>
+            </div>
+
+            <button id="pauseBtn" class="pause-btn">
+                PAUSE
+            </button>
         </header>
 
-        <section class="game-panel">
 
-            <div class="score-board">
-                <div>
-                    <small>SCORE</small>
+        <section class="dashboard">
+
+            <!-- LEFT SIDE -->
+
+            <aside class="side-panel">
+
+                <div class="info-card">
+                    <span>SCORE</span>
                     <strong id="score">0</strong>
                 </div>
 
-                <div>
-                    <small>LEVEL</small>
+                <div class="info-card">
+                    <span>LEVEL</span>
                     <strong id="level">1</strong>
                 </div>
 
-                <div>
-                    <small>LINES</small>
+                <div class="info-card">
+                    <span>LINES</span>
                     <strong id="lines">0</strong>
                 </div>
+
+                <div class="piece-card">
+
+                    <span>NEXT</span>
+
+                    <canvas
+                        id="nextCanvas"
+                        width="120"
+                        height="120">
+                    </canvas>
+
+                </div>
+
+                <div class="piece-card">
+
+                    <span>HOLD</span>
+
+                    <canvas
+                        id="holdCanvas"
+                        width="120"
+                        height="120">
+                    </canvas>
+
+                </div>
+
+            </aside>
+
+
+            <!-- GAME -->
+
+            <div class="game-area">
+
+                <div class="canvas-wrapper">
+
+                    <canvas
+                        id="gameCanvas"
+                        width="300"
+                        height="600">
+                    </canvas>
+
+                    <div
+                        id="pauseOverlay"
+                        class="overlay hidden">
+
+                        <h2>PAUSED</h2>
+                        <p>Press P or Resume</p>
+
+                    </div>
+
+                    <div
+                        id="gameOverOverlay"
+                        class="overlay hidden">
+
+                        <h2>GAME OVER</h2>
+
+                        <p>
+                            Final Score:
+                            <strong id="finalScore">0</strong>
+                        </p>
+
+                        <button id="restartBtn">
+                            PLAY AGAIN
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="controls">
+
+                    <button id="left">◀</button>
+
+                    <button id="rotate">↻</button>
+
+                    <button id="right">▶</button>
+
+                    <button id="drop">▼</button>
+
+                    <button id="hold">HOLD</button>
+
+                </div>
+
+
+                <button
+                    id="startBtn"
+                    class="start-btn">
+
+                    START GAME
+
+                </button>
+
             </div>
-
-            <canvas id="gameCanvas" width="300" height="600"></canvas>
-
-            <div class="controls">
-                <button id="left">◀</button>
-                <button id="rotate">↻</button>
-                <button id="right">▶</button>
-                <button id="drop">▼</button>
-            </div>
-
-            <button id="startBtn">START GAME</button>
 
         </section>
 
+
         <footer>
-            BLOCKDROP v1.0 • JavaScript Puzzle Engine
+
+            <span>BLOCKDROP v3.0</span>
+
+            <span>
+                ← → MOVE • ↑ ROTATE • SPACE DROP • C HOLD • P PAUSE
+            </span>
+
         </footer>
 
     </main>
