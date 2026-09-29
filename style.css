@@ -4,6 +4,7 @@
     padding: 0;
 }
 
+
 body {
 
     min-height: 100vh;
@@ -16,15 +17,17 @@ body {
     background:
         radial-gradient(
             circle at top,
-            #242424 0%,
-            #090909 45%,
-            #030303 100%
+            #292929,
+            #080808 55%,
+            #020202
         );
 
     color: white;
 
     display: flex;
+
     justify-content: center;
+
     align-items: center;
 
     padding: 20px;
@@ -32,17 +35,14 @@ body {
 }
 
 
-/* MAIN */
-
 .game-container {
 
     width: 100%;
+
     max-width: 850px;
 
 }
 
-
-/* HEADER */
 
 .game-header {
 
@@ -58,6 +58,7 @@ body {
 
 }
 
+
 .mini-title {
 
     color: #666;
@@ -70,6 +71,7 @@ body {
 
 }
 
+
 .game-header h1 {
 
     font-size: 42px;
@@ -78,11 +80,13 @@ body {
 
 }
 
+
 .game-header h1 span {
 
     color: #ff304f;
 
 }
+
 
 .subtitle {
 
@@ -96,7 +100,17 @@ body {
 
 }
 
-.pause-btn {
+
+.header-actions {
+
+    display: flex;
+
+    gap: 8px;
+
+}
+
+
+.small-btn {
 
     background: #111;
 
@@ -104,31 +118,34 @@ body {
 
     border: 1px solid #333;
 
-    padding: 12px 18px;
-
     border-radius: 8px;
 
-    cursor: pointer;
+    padding: 11px 15px;
 
-    letter-spacing: 1px;
+    cursor: pointer;
 
 }
 
 
-/* DASHBOARD */
+.small-btn:hover {
+
+    border-color: #ff304f;
+
+    color: #ff304f;
+
+}
+
 
 .dashboard {
 
     display: flex;
 
-    gap: 20px;
-
     justify-content: center;
+
+    gap: 20px;
 
 }
 
-
-/* SIDE PANEL */
 
 .side-panel {
 
@@ -138,12 +155,10 @@ body {
 
     flex-direction: column;
 
-    gap: 12px;
+    gap: 10px;
 
 }
 
-
-/* INFO CARD */
 
 .info-card {
 
@@ -151,17 +166,18 @@ body {
 
     border: 1px solid #292929;
 
-    border-radius: 12px;
+    border-radius: 11px;
 
-    padding: 13px;
+    padding: 11px;
 
     display: flex;
 
     flex-direction: column;
 
-    gap: 5px;
+    gap: 4px;
 
 }
+
 
 .info-card span {
 
@@ -173,16 +189,22 @@ body {
 
 }
 
+
 .info-card strong {
 
     color: #ff304f;
 
-    font-size: 24px;
+    font-size: 22px;
 
 }
 
 
-/* PIECE CARD */
+.combo-card strong {
+
+    color: #ffd000;
+
+}
+
 
 .piece-card {
 
@@ -190,13 +212,14 @@ body {
 
     border: 1px solid #292929;
 
-    border-radius: 12px;
+    border-radius: 11px;
 
-    padding: 10px;
+    padding: 8px;
 
     text-align: center;
 
 }
+
 
 .piece-card > span {
 
@@ -208,20 +231,19 @@ body {
 
 }
 
+
 .piece-card canvas {
 
-    width: 100px;
+    width: 90px;
 
-    height: 100px;
+    height: 90px;
 
     display: block;
 
-    margin: 5px auto 0;
+    margin: 3px auto;
 
 }
 
-
-/* GAME */
 
 .game-area {
 
@@ -230,8 +252,6 @@ body {
 }
 
 
-/* CANVAS */
-
 .canvas-wrapper {
 
     position: relative;
@@ -239,6 +259,7 @@ body {
     display: inline-block;
 
 }
+
 
 #gameCanvas {
 
@@ -255,14 +276,81 @@ body {
     border-radius: 10px;
 
     box-shadow:
-
-        0 0 30px
-        rgba(255, 48, 79, 0.08);
+        0 0 35px
+        rgba(255, 48, 79, 0.1);
 
 }
 
 
-/* OVERLAY */
+.game-message {
+
+    position: absolute;
+
+    left: 50%;
+
+    top: 45%;
+
+    transform:
+        translate(-50%, -50%);
+
+    color: #fff;
+
+    font-size: 24px;
+
+    font-weight: bold;
+
+    letter-spacing: 3px;
+
+    pointer-events: none;
+
+    opacity: 0;
+
+}
+
+
+.game-message.show {
+
+    animation:
+        messagePop 0.8s ease
+        forwards;
+
+}
+
+
+@keyframes messagePop {
+
+    0% {
+
+        opacity: 0;
+
+        transform:
+            translate(-50%, -30%)
+            scale(0.7);
+
+    }
+
+    30% {
+
+        opacity: 1;
+
+        transform:
+            translate(-50%, -50%)
+            scale(1.2);
+
+    }
+
+    100% {
+
+        opacity: 0;
+
+        transform:
+            translate(-50%, -80%)
+            scale(1);
+
+    }
+
+}
+
 
 .overlay {
 
@@ -271,7 +359,7 @@ body {
     inset: 0;
 
     background:
-        rgba(0, 0, 0, 0.88);
+        rgba(0, 0, 0, 0.9);
 
     display: flex;
 
@@ -281,11 +369,12 @@ body {
 
     align-items: center;
 
-    gap: 15px;
+    gap: 13px;
 
     border-radius: 10px;
 
 }
+
 
 .overlay h2 {
 
@@ -295,15 +384,19 @@ body {
 
 }
 
+
 .overlay p {
 
     color: #aaa;
 
 }
 
+
 .overlay button {
 
-    padding: 12px 20px;
+    margin-top: 8px;
+
+    padding: 12px 22px;
 
     border: none;
 
@@ -319,14 +412,13 @@ body {
 
 }
 
+
 .hidden {
 
     display: none;
 
 }
 
-
-/* CONTROLS */
 
 .controls {
 
@@ -340,11 +432,12 @@ body {
 
 }
 
+
 .controls button {
 
-    height: 44px;
-
     min-width: 48px;
+
+    height: 44px;
 
     background: #111;
 
@@ -360,6 +453,7 @@ body {
 
 }
 
+
 .controls button:hover {
 
     background: #ff304f;
@@ -368,16 +462,15 @@ body {
 
 }
 
+
 #hold {
 
-    font-size: 11px;
+    font-size: 10px;
 
     letter-spacing: 1px;
 
 }
 
-
-/* START */
 
 .start-btn {
 
@@ -404,7 +497,12 @@ body {
 }
 
 
-/* FOOTER */
+.start-btn:hover {
+
+    transform: translateY(-2px);
+
+}
+
 
 footer {
 
@@ -423,8 +521,6 @@ footer {
 }
 
 
-/* MOBILE */
-
 @media (max-width: 650px) {
 
     body {
@@ -433,11 +529,13 @@ footer {
 
     }
 
+
     .game-header h1 {
 
         font-size: 30px;
 
     }
+
 
     .dashboard {
 
@@ -446,6 +544,7 @@ footer {
         align-items: center;
 
     }
+
 
     .side-panel {
 
@@ -460,11 +559,13 @@ footer {
 
     }
 
+
     .piece-card {
 
         grid-column: span 1;
 
     }
+
 
     footer {
 
