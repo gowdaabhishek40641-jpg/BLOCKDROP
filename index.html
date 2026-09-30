@@ -21,251 +21,532 @@
 
 <body>
 
-<main class="game-container">
+<div id="app">
 
-    <header class="game-header">
+    <!-- ================= MENU ================= -->
 
-        <div>
+    <section
+        id="menuScreen"
+        class="screen menu-screen"
+    >
 
-            <p class="mini-title">
-                ARCADE SYSTEM
+        <div class="menu-content">
+
+            <p class="eyebrow">
+                NEXT GENERATION PUZZLE ARCADE
             </p>
 
-            <h1>
+            <h1 class="logo">
                 BLOCK<span>DROP</span>
             </h1>
 
-            <p class="subtitle">
-                DROP • MATCH • CLEAR • LEVEL UP
+            <p class="tagline">
+                DROP. MATCH. DESTROY.
             </p>
 
-        </div>
 
-        <div class="header-actions">
+            <div class="menu-box">
 
-            <button
-                id="soundBtn"
-                class="small-btn"
-            >
-                🔊
-            </button>
-
-            <button
-                id="pauseBtn"
-                class="small-btn"
-            >
-                PAUSE
-            </button>
-
-        </div>
-
-    </header>
+                <h2>
+                    SELECT MODE
+                </h2>
 
 
-    <section class="dashboard">
-
-        <aside class="side-panel">
-
-            <div class="info-card">
-
-                <span>SCORE</span>
-
-                <strong id="score">
-                    0
-                </strong>
-
-            </div>
-
-
-            <div class="info-card">
-
-                <span>HIGH SCORE</span>
-
-                <strong id="highScore">
-                    0
-                </strong>
-
-            </div>
-
-
-            <div class="info-card">
-
-                <span>LEVEL</span>
-
-                <strong id="level">
-                    1
-                </strong>
-
-            </div>
-
-
-            <div class="info-card">
-
-                <span>LINES</span>
-
-                <strong id="lines">
-                    0
-                </strong>
-
-            </div>
-
-
-            <div class="info-card combo-card">
-
-                <span>COMBO</span>
-
-                <strong id="combo">
-                    x0
-                </strong>
-
-            </div>
-
-
-            <div class="piece-card">
-
-                <span>NEXT</span>
-
-                <canvas
-                    id="nextCanvas"
-                    width="120"
-                    height="120"
-                ></canvas>
-
-            </div>
-
-
-            <div class="piece-card">
-
-                <span>HOLD</span>
-
-                <canvas
-                    id="holdCanvas"
-                    width="120"
-                    height="120"
-                ></canvas>
-
-            </div>
-
-        </aside>
-
-
-        <div class="game-area">
-
-            <div class="canvas-wrapper">
-
-                <canvas
-                    id="gameCanvas"
-                    width="300"
-                    height="600"
-                ></canvas>
-
-                <div
-                    id="message"
-                    class="game-message"
-                >
-                </div>
-
-
-                <div
-                    id="pauseOverlay"
-                    class="overlay hidden"
-                >
-
-                    <h2>
-                        PAUSED
-                    </h2>
-
-                    <p>
-                        Press P or Resume
-                    </p>
-
-                </div>
-
-
-                <div
-                    id="gameOverOverlay"
-                    class="overlay hidden"
-                >
-
-                    <h2>
-                        GAME OVER
-                    </h2>
-
-                    <p>
-                        Final Score:
-                        <strong id="finalScore">
-                            0
-                        </strong>
-                    </p>
-
-                    <p>
-                        High Score:
-                        <strong id="finalHighScore">
-                            0
-                        </strong>
-                    </p>
+                <div class="mode-grid">
 
                     <button
-                        id="restartBtn"
+                        class="mode-btn active"
+                        data-mode="classic"
                     >
-                        PLAY AGAIN
+
+                        <strong>
+                            CLASSIC
+                        </strong>
+
+                        <small>
+                            Endless traditional mode
+                        </small>
+
+                    </button>
+
+
+                    <button
+                        class="mode-btn"
+                        data-mode="time"
+                    >
+
+                        <strong>
+                            TIME ATTACK
+                        </strong>
+
+                        <small>
+                            120 seconds challenge
+                        </small>
+
+                    </button>
+
+
+                    <button
+                        class="mode-btn"
+                        data-mode="endless"
+                    >
+
+                        <strong>
+                            ENDLESS
+                        </strong>
+
+                        <small>
+                            Speed increases forever
+                        </small>
+
                     </button>
 
                 </div>
 
+
+                <h2>
+                    DIFFICULTY
+                </h2>
+
+
+                <div class="difficulty-grid">
+
+                    <button
+                        class="difficulty-btn active"
+                        data-difficulty="normal"
+                    >
+                        NORMAL
+                    </button>
+
+                    <button
+                        class="difficulty-btn"
+                        data-difficulty="hard"
+                    >
+                        HARD
+                    </button>
+
+                    <button
+                        class="difficulty-btn"
+                        data-difficulty="insane"
+                    >
+                        INSANE
+                    </button>
+
+                </div>
+
+
+                <button
+                    id="playBtn"
+                    class="play-btn"
+                >
+                    PLAY GAME
+                </button>
+
             </div>
 
 
-            <div class="controls">
+            <div class="menu-stats">
 
-                <button id="left">
-                    ◀
-                </button>
+                <div>
 
-                <button id="rotate">
-                    ↻
-                </button>
+                    <span>
+                        CLASSIC BEST
+                    </span>
 
-                <button id="right">
-                    ▶
-                </button>
+                    <strong id="classicBest">
+                        0
+                    </strong>
 
-                <button id="drop">
-                    ▼
-                </button>
+                </div>
 
-                <button id="hold">
-                    HOLD
-                </button>
+
+                <div>
+
+                    <span>
+                        TIME BEST
+                    </span>
+
+                    <strong id="timeBest">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        ENDLESS BEST
+                    </span>
+
+                    <strong id="endlessBest">
+                        0
+                    </strong>
+
+                </div>
 
             </div>
-
-
-            <button
-                id="startBtn"
-                class="start-btn"
-            >
-                START GAME
-            </button>
 
         </div>
 
     </section>
 
 
-    <footer>
+    <!-- ================= GAME ================= -->
 
-        <span>
-            BLOCKDROP v4.0
-        </span>
+    <section
+        id="gameScreen"
+        class="screen game-screen hidden"
+    >
 
-        <span>
-            ← → MOVE • ↑ ROTATE • SPACE DROP • C HOLD • P PAUSE
-        </span>
+        <header class="game-header">
 
-    </footer>
+            <div>
 
-</main>
+                <p class="mini-title">
+                    ARCADE SYSTEM
+                </p>
+
+                <h1>
+                    BLOCK<span>DROP</span>
+                </h1>
+
+                <p
+                    id="modeLabel"
+                    class="subtitle"
+                >
+                    CLASSIC
+                </p>
+
+            </div>
+
+
+            <div class="header-actions">
+
+                <button
+                    id="soundBtn"
+                    class="small-btn"
+                >
+                    🔊
+                </button>
+
+                <button
+                    id="pauseBtn"
+                    class="small-btn"
+                >
+                    PAUSE
+                </button>
+
+                <button
+                    id="menuBtn"
+                    class="small-btn"
+                >
+                    MENU
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <section class="dashboard">
+
+
+            <!-- SIDE -->
+
+            <aside class="side-panel">
+
+
+                <div class="info-card">
+
+                    <span>
+                        SCORE
+                    </span>
+
+                    <strong id="score">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <span>
+                        BEST
+                    </span>
+
+                    <strong id="highScore">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <span>
+                        LEVEL
+                    </span>
+
+                    <strong id="level">
+                        1
+                    </strong>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <span>
+                        LINES
+                    </span>
+
+                    <strong id="lines">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <span>
+                        COMBO
+                    </span>
+
+                    <strong
+                        id="combo"
+                        class="combo-value"
+                    >
+                        x0
+                    </strong>
+
+                </div>
+
+
+                <div
+                    id="timerCard"
+                    class="info-card timer-card hidden"
+                >
+
+                    <span>
+                        TIME
+                    </span>
+
+                    <strong id="timer">
+                        120
+                    </strong>
+
+                </div>
+
+
+                <div class="piece-card">
+
+                    <span>
+                        NEXT
+                    </span>
+
+                    <canvas
+                        id="nextCanvas"
+                        width="120"
+                        height="120"
+                    ></canvas>
+
+                </div>
+
+
+                <div class="piece-card">
+
+                    <span>
+                        HOLD
+                    </span>
+
+                    <canvas
+                        id="holdCanvas"
+                        width="120"
+                        height="120"
+                    ></canvas>
+
+                </div>
+
+
+            </aside>
+
+
+            <!-- GAME AREA -->
+
+            <div class="game-area">
+
+                <div class="canvas-wrapper">
+
+                    <canvas
+                        id="gameCanvas"
+                        width="300"
+                        height="600"
+                    ></canvas>
+
+
+                    <div
+                        id="pauseOverlay"
+                        class="overlay hidden"
+                    >
+
+                        <h2>
+                            PAUSED
+                        </h2>
+
+                        <p>
+                            Press P or Resume
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        id="countdownOverlay"
+                        class="overlay hidden"
+                    >
+
+                        <strong
+                            id="countdown"
+                        >
+                            3
+                        </strong>
+
+                    </div>
+
+
+                    <div
+                        id="gameOverOverlay"
+                        class="overlay hidden"
+                    >
+
+                        <p class="overlay-title">
+                            GAME OVER
+                        </p>
+
+                        <h2
+                            id="resultTitle"
+                        >
+                            RUN COMPLETE
+                        </h2>
+
+
+                        <div class="results">
+
+                            <div>
+                                <span>
+                                    SCORE
+                                </span>
+
+                                <strong
+                                    id="finalScore"
+                                >
+                                    0
+                                </strong>
+                            </div>
+
+
+                            <div>
+                                <span>
+                                    LINES
+                                </span>
+
+                                <strong
+                                    id="finalLines"
+                                >
+                                    0
+                                </strong>
+                            </div>
+
+
+                            <div>
+                                <span>
+                                    LEVEL
+                                </span>
+
+                                <strong
+                                    id="finalLevel"
+                                >
+                                    1
+                                </strong>
+                            </div>
+
+                        </div>
+
+
+                        <button
+                            id="restartBtn"
+                        >
+                            PLAY AGAIN
+                        </button>
+
+
+                        <button
+                            id="resultMenuBtn"
+                            class="secondary-btn"
+                        >
+                            MAIN MENU
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="controls">
+
+                    <button id="left">
+                        ◀
+                    </button>
+
+                    <button id="rotate">
+                        ↻
+                    </button>
+
+                    <button id="right">
+                        ▶
+                    </button>
+
+                    <button id="drop">
+                        ▼
+                    </button>
+
+                    <button id="hold">
+                        HOLD
+                    </button>
+
+                </div>
+
+
+                <button
+                    id="startBtn"
+                    class="start-btn"
+                >
+                    START
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <footer>
+
+            <span>
+                BLOCKDROP v5.0
+            </span>
+
+            <span>
+                ← → MOVE • ↑ ROTATE • SPACE DROP • C HOLD • P PAUSE
+            </span>
+
+        </footer>
+
+    </section>
+
+</div>
 
 <script src="game.js"></script>
 

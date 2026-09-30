@@ -20,9 +20,7 @@ const holdCtx =
 
 
 const COLS = 10;
-
 const ROWS = 20;
-
 const BLOCK = 30;
 
 
@@ -46,19 +44,19 @@ let lines = 0;
 let combo = 0;
 
 
-let highScore =
-    Number(
-        localStorage.getItem(
-            "blockdropHighScore"
-        )
-    ) || 0;
-
-
 let gameRunning = false;
 
 let paused = false;
 
-let soundEnabled = true;
+
+let gameMode = "classic";
+
+let difficulty = "normal";
+
+
+let timer = 120;
+
+let timerInterval = null;
 
 
 let dropCounter = 0;
@@ -73,68 +71,296 @@ let clearingRows = [];
 let clearTimer = 0;
 
 
+let soundEnabled = true;
+
 let audioContext = null;
+
+
+const DIFFICULTY = {
+
+    normal: {
+        speed: 800,
+        multiplier: 1
+    },
+
+    hard: {
+        speed: 560,
+        multiplier: 1.5
+    },
+
+    insane: {
+        speed: 350,
+        multiplier: 2
+    }
+
+};
 
 
 const SHAPES = [
 
     {
         shape: [
-            [1, 1, 1, 1]
+            [1,1,1,1]
         ],
         color: "#00e5ff"
     },
 
     {
         shape: [
-            [1, 1],
-            [1, 1]
+            [1,1],
+            [1,1]
         ],
         color: "#ffd000"
     },
 
     {
         shape: [
-            [0, 1, 0],
-            [1, 1, 1]
+            [0,1,0],
+            [1,1,1]
         ],
         color: "#a855f7"
     },
 
     {
         shape: [
-            [1, 0, 0],
-            [1, 1, 1]
+            [1,0,0],
+            [1,1,1]
         ],
         color: "#ff304f"
     },
 
     {
         shape: [
-            [0, 0, 1],
-            [1, 1, 1]
+            [0,0,1],
+            [1,1,1]
         ],
         color: "#ff8a00"
     },
 
     {
         shape: [
-            [0, 1, 1],
-            [1, 1, 0]
+            [0,1,1],
+            [1,1,0]
         ],
         color: "#22c55e"
     },
 
     {
         shape: [
-            [1, 1, 0],
-            [0, 1, 1]
+            [1,1,0],
+            [0,1,1]
         ],
         color: "#3b82f6"
     }
 
 ];
 
+
+/* ================= STORAGE ================= */
+
+function getBest(mode) {
+
+    return Number(
+        localStorage.getItem(
+            `blockdrop_${mode}_best`
+        )
+    ) || 0;
+
+}
+
+
+function saveBest() {
+
+    if (
+        score >
+        getBest(gameMode)
+    ) {
+
+        localStorage.setItem(
+            `blockdrop_${gameMode}_best`,
+            score
+        );
+
+    }
+
+}
+
+
+/* ================= MENU ================= */
+
+document
+    .querySelectorAll(".mode-btn")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".mode-btn"
+                    )
+                    .forEach(
+                        item =>
+                            item.classList
+                                .remove(
+                                    "active"
+                                )
+                    );
+
+
+                button.classList.add(
+                    "active"
+                );
+
+
+                gameMode =
+                    button.dataset.mode;
+
+
+                updateMenu();
+
+            }
+        );
+
+    });
+
+
+document
+    .querySelectorAll(".difficulty-btn")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".difficulty-btn"
+                    )
+                    .forEach(
+                        item =>
+                            item.classList
+                                .remove(
+                                    "active"
+                                )
+                    );
+
+
+                button.classList.add(
+                    "active"
+                );
+
+
+                difficulty =
+                    button.dataset.difficulty;
+
+            }
+        );
+
+    });
+
+
+function updateMenu() {
+
+    document.getElementById(
+        "classicBest"
+    ).textContent =
+        getBest("classic");
+
+
+    document.getElementById(
+        "timeBest"
+    ).textContent =
+        getBest("time");
+
+
+    document.getElementById(
+        "endlessBest"
+    ).textContent =
+        getBest("endless");
+
+}
+
+
+function showGameScreen() {
+
+    document
+        .getElementById(
+            "menuScreen"
+        )
+        .classList.add(
+            "hidden"
+        );
+
+
+    document
+        .getElementById(
+            "gameScreen"
+        )
+        .classList.remove(
+            "hidden"
+        );
+
+}
+
+
+function showMenuScreen() {
+
+    stopTimer();
+
+    gameRunning = false;
+
+    paused = false;
+
+
+    document
+        .getElementById(
+            "gameScreen"
+        )
+        .classList.add(
+            "hidden"
+        );
+
+
+    document
+        .getElementById(
+            "menuScreen"
+        )
+        .classList.remove(
+            "hidden"
+        );
+
+
+    updateMenu();
+
+}
+
+
+document.getElementById(
+    "playBtn"
+).onclick = () => {
+
+    showGameScreen();
+
+    startGame();
+
+};
+
+
+document.getElementById(
+    "menuBtn"
+).onclick =
+    showMenuScreen;
+
+
+document.getElementById(
+    "resultMenuBtn"
+).onclick =
+    showMenuScreen;
+
+
+/* ================= BOARD ================= */
 
 function createBoard() {
 
@@ -169,8 +395,10 @@ function createRandomPiece() {
 
         x:
             Math.floor(
-                (COLS -
-                data.shape[0].length) / 2
+                (
+                    COLS -
+                    data.shape[0].length
+                ) / 2
             ),
 
         y: 0
@@ -179,6 +407,8 @@ function createRandomPiece() {
 
 }
 
+
+/* ================= SPAWN ================= */
 
 function spawnPlayer() {
 
@@ -216,6 +446,8 @@ function spawnPlayer() {
 }
 
 
+/* ================= COLLISION ================= */
+
 function collisionAt(
     px,
     py,
@@ -234,7 +466,8 @@ function collisionAt(
             x++
         ) {
 
-            if (!shape[y][x]) continue;
+            if (!shape[y][x])
+                continue;
 
 
             const bx =
@@ -284,6 +517,8 @@ function collision() {
 }
 
 
+/* ================= DRAW ================= */
+
 function drawBlock(
     context,
     x,
@@ -292,7 +527,9 @@ function drawBlock(
     size
 ) {
 
-    context.fillStyle = color;
+    context.fillStyle =
+        color;
+
 
     context.fillRect(
         x * size + 2,
@@ -304,6 +541,7 @@ function drawBlock(
 
     context.strokeStyle =
         "#ffffff44";
+
 
     context.strokeRect(
         x * size + 2,
@@ -340,7 +578,8 @@ function drawBoard() {
             if (board[y][x]) {
 
                 if (
-                    !clearingRows.includes(y)
+                    !clearingRows
+                        .includes(y)
                 ) {
 
                     drawBlock(
@@ -357,6 +596,7 @@ function drawBoard() {
 
                 ctx.strokeStyle =
                     "#151515";
+
 
                 ctx.strokeRect(
                     x * BLOCK,
@@ -417,31 +657,31 @@ function drawPlayer() {
 
 function getGhostY() {
 
-    let ghostY =
+    let y =
         player.y;
 
 
     while (
         !collisionAt(
             player.x,
-            ghostY + 1,
+            y + 1,
             player.shape
         )
     ) {
 
-        ghostY++;
+        y++;
 
     }
 
 
-    return ghostY;
+    return y;
 
 }
 
 
 function drawGhost() {
 
-    const ghostY =
+    const ghost =
         getGhostY();
 
 
@@ -457,13 +697,18 @@ function drawGhost() {
                             player.color +
                             "25";
 
+
                         ctx.fillRect(
 
-                            (player.x + x)
-                            * BLOCK + 5,
+                            (
+                                player.x +
+                                x
+                            ) * BLOCK + 5,
 
-                            (ghostY + y)
-                            * BLOCK + 5,
+                            (
+                                ghost +
+                                y
+                            ) * BLOCK + 5,
 
                             BLOCK - 10,
 
@@ -482,6 +727,8 @@ function drawGhost() {
 }
 
 
+/* ================= MOVEMENT ================= */
+
 function moveLeft() {
 
     if (
@@ -493,11 +740,8 @@ function moveLeft() {
     player.x--;
 
 
-    if (collision()) {
-
+    if (collision())
         player.x++;
-
-    }
 
 
     drawBoard();
@@ -516,11 +760,8 @@ function moveRight() {
     player.x++;
 
 
-    if (collision()) {
-
+    if (collision())
         player.x--;
-
-    }
 
 
     drawBoard();
@@ -555,6 +796,73 @@ function moveDown() {
 }
 
 
+function rotatePlayer() {
+
+    if (
+        !gameRunning ||
+        paused
+    ) return;
+
+
+    const old =
+        player.shape;
+
+
+    player.shape =
+        player.shape[0].map(
+            (_, index) =>
+                player.shape
+                    .map(
+                        row =>
+                            row[index]
+                    )
+                    .reverse()
+        );
+
+
+    if (collision()) {
+
+        player.shape =
+            old;
+
+    }
+
+
+    drawBoard();
+
+}
+
+
+function hardDrop() {
+
+    if (
+        !gameRunning ||
+        paused
+    ) return;
+
+
+    const ghost =
+        getGhostY();
+
+
+    score +=
+        (ghost - player.y) * 2;
+
+
+    player.y =
+        ghost;
+
+
+    lockPiece();
+
+
+    updateUI();
+
+}
+
+
+/* ================= LOCK ================= */
+
 function lockPiece() {
 
     player.shape.forEach(
@@ -581,40 +889,34 @@ function lockPiece() {
     );
 
 
-    playSound(
-        150,
-        0.05,
-        "square"
-    );
-
-
-    const cleared =
+    const rows =
         findFullRows();
 
 
-    if (cleared.length > 0) {
+    if (
+        rows.length
+    ) {
 
         clearingRows =
-            cleared;
+            rows;
 
-        createParticles(
-            cleared
-        );
 
         combo++;
 
+
         awardPoints(
-            cleared.length
-        );
-
-        playSound(
-            500,
-            0.12,
-            "sine"
+            rows.length
         );
 
 
-        clearTimer = 180;
+        createParticles(
+            rows
+        );
+
+
+        clearTimer =
+            180;
+
 
     } else {
 
@@ -643,7 +945,8 @@ function findFullRows() {
 
         if (
             board[y].every(
-                cell => cell !== null
+                cell =>
+                    cell !== null
             )
         ) {
 
@@ -661,14 +964,9 @@ function findFullRows() {
 
 function finishLineClear() {
 
-    if (
-        clearingRows.length === 0
-    ) return;
-
-
     clearingRows
         .sort(
-            (a, b) => b - a
+            (a,b) => b-a
         )
         .forEach(
             row => {
@@ -677,6 +975,7 @@ function finishLineClear() {
                     row,
                     1
                 );
+
 
                 board.unshift(
                     Array(COLS)
@@ -691,16 +990,17 @@ function finishLineClear() {
 
     clearTimer = 0;
 
+
     spawnPlayer();
 
 }
 
 
-function awardPoints(
-    count
-) {
+/* ================= SCORE ================= */
 
-    const basePoints = {
+function awardPoints(count) {
+
+    const points = {
 
         1: 100,
 
@@ -713,38 +1013,43 @@ function awardPoints(
     };
 
 
-    let points =
-        (basePoints[count] || 800)
-        * level;
+    let value =
+        points[count] || 800;
+
+
+    value *= level;
+
+
+    value *=
+        DIFFICULTY[
+            difficulty
+        ].multiplier;
 
 
     if (combo > 1) {
 
-        points +=
-            (combo - 1)
-            * 100
-            * level;
-
-        showMessage(
-            `COMBO x${combo}`
-        );
+        value +=
+            (
+                combo - 1
+            ) *
+            100 *
+            level;
 
     }
 
 
-    if (count === 4) {
+    if (
+        gameMode === "time"
+    ) {
 
-        points +=
-            1000 * level;
-
-        showMessage(
-            "BLOCKDROP!"
-        );
+        value *= 1.25;
 
     }
 
 
-    score += points;
+    score +=
+        Math.floor(value);
+
 
     lines += count;
 
@@ -755,101 +1060,36 @@ function awardPoints(
         ) + 1;
 
 
-    if (
-        score > highScore
+    if (count === 4) {
+
+        showMessage(
+            "BLOCKDROP!"
+        );
+
+    } else if (
+        combo > 1
     ) {
 
-        highScore =
-            score;
-
-        localStorage.setItem(
-            "blockdropHighScore",
-            highScore
+        showMessage(
+            `COMBO x${combo}`
         );
 
     }
 
 
-    updateUI();
+    playSound(
+        550,
+        0.12,
+        "sine"
+    );
+
+
+    saveBest();
 
 }
 
 
-function rotatePlayer() {
-
-    if (
-        !gameRunning ||
-        paused
-    ) return;
-
-
-    const oldShape =
-        player.shape;
-
-
-    player.shape =
-        player.shape[0].map(
-            (_, index) =>
-                player.shape
-                    .map(
-                        row =>
-                            row[index]
-                    )
-                    .reverse()
-        );
-
-
-    if (collision()) {
-
-        player.shape =
-            oldShape;
-
-    } else {
-
-        playSound(
-            350,
-            0.04,
-            "square"
-        );
-
-    }
-
-
-    drawBoard();
-
-}
-
-
-function hardDrop() {
-
-    if (
-        !gameRunning ||
-        paused
-    ) return;
-
-
-    const ghostY =
-        getGhostY();
-
-
-    const distance =
-        ghostY - player.y;
-
-
-    score +=
-        distance * 2;
-
-
-    player.y =
-        ghostY;
-
-
-    lockPiece();
-
-    updateUI();
-
-}
-
+/* ================= HOLD ================= */
 
 function holdCurrentPiece() {
 
@@ -924,19 +1164,14 @@ function holdCurrentPiece() {
     }
 
 
-    playSound(
-        250,
-        0.05,
-        "triangle"
-    );
-
-
     drawHold();
 
     drawBoard();
 
 }
 
+
+/* ================= PREVIEWS ================= */
 
 function drawNext() {
 
@@ -948,14 +1183,11 @@ function drawNext() {
     );
 
 
-    if (nextPiece) {
-
-        drawMiniPiece(
+    if (nextPiece)
+        drawMini(
             nextCtx,
             nextPiece
         );
-
-    }
 
 }
 
@@ -970,19 +1202,16 @@ function drawHold() {
     );
 
 
-    if (holdPiece) {
-
-        drawMiniPiece(
+    if (holdPiece)
+        drawMini(
             holdCtx,
             holdPiece
         );
 
-    }
-
 }
 
 
-function drawMiniPiece(
+function drawMini(
     context,
     piece
 ) {
@@ -1001,23 +1230,30 @@ function drawMiniPiece(
 
 
     const offsetX =
-        (120 - width) / 2;
+        (
+            120 -
+            width
+        ) / 2;
 
 
     const offsetY =
-        (120 - height) / 2;
+        (
+            120 -
+            height
+        ) / 2;
 
 
     piece.shape.forEach(
-        (row, y) => {
+        (row,y) => {
 
             row.forEach(
-                (value, x) => {
+                (value,x) => {
 
                     if (value) {
 
                         context.fillStyle =
                             piece.color;
+
 
                         context.fillRect(
 
@@ -1043,6 +1279,8 @@ function drawMiniPiece(
 
 }
 
+
+/* ================= PARTICLES ================= */
 
 function createParticles(rows) {
 
@@ -1072,17 +1310,22 @@ function createParticles(rows) {
                             BLOCK / 2,
 
                         vx:
-                            (Math.random() - 0.5)
-                            * 5,
+                            (
+                                Math.random()
+                                - 0.5
+                            ) * 5,
 
                         vy:
-                            (Math.random() - 1)
-                            * 5,
+                            (
+                                Math.random()
+                                - 1
+                            ) * 5,
 
                         life: 1,
 
                         size:
-                            Math.random() * 4 + 2
+                            Math.random() *
+                            4 + 2
 
                     });
 
@@ -1099,10 +1342,10 @@ function createParticles(rows) {
 function drawParticles() {
 
     particles.forEach(
-        particle => {
+        p => {
 
             ctx.globalAlpha =
-                particle.life;
+                p.life;
 
 
             ctx.fillStyle =
@@ -1110,32 +1353,20 @@ function drawParticles() {
 
 
             ctx.fillRect(
-
-                particle.x,
-
-                particle.y,
-
-                particle.size,
-
-                particle.size
-
+                p.x,
+                p.y,
+                p.size,
+                p.size
             );
 
 
-            particle.x +=
-                particle.vx;
+            p.x += p.vx;
 
+            p.y += p.vy;
 
-            particle.y +=
-                particle.vy;
+            p.vy += 0.15;
 
-
-            particle.vy +=
-                0.15;
-
-
-            particle.life -=
-                0.025;
+            p.life -= 0.025;
 
         }
     );
@@ -1146,87 +1377,162 @@ function drawParticles() {
 
     particles =
         particles.filter(
-            p => p.life > 0
+            p =>
+                p.life > 0
         );
 
 }
 
 
+/* ================= MESSAGE ================= */
+
 function showMessage(text) {
 
-    const message =
+    const element =
         document.getElementById(
             "message"
         );
 
 
-    message.textContent =
+    if (!element)
+        return;
+
+
+    element.textContent =
         text;
 
 
-    message.classList.remove(
+    element.classList.remove(
         "show"
     );
 
 
-    void message.offsetWidth;
+    void element.offsetWidth;
 
 
-    message.classList.add(
+    element.classList.add(
         "show"
     );
 
 }
 
+
+/* ================= SPEED ================= */
 
 function getDropSpeed() {
 
+    let speed =
+        DIFFICULTY[
+            difficulty
+        ].speed;
+
+
+    speed -=
+        (
+            level - 1
+        ) * 60;
+
+
+    if (
+        gameMode === "endless"
+    ) {
+
+        speed -=
+            level * 15;
+
+    }
+
+
     return Math.max(
-        100,
-        800 -
-        ((level - 1) * 70)
+        80,
+        speed
     );
 
 }
 
 
-function updateUI() {
+/* ================= TIMER ================= */
 
-    document.getElementById(
-        "score"
-    ).textContent =
-        score;
+function startTimer() {
 
-
-    document.getElementById(
-        "highScore"
-    ).textContent =
-        highScore;
+    stopTimer();
 
 
-    document.getElementById(
-        "level"
-    ).textContent =
-        level;
+    if (
+        gameMode !== "time"
+    )
+        return;
 
 
-    document.getElementById(
-        "lines"
-    ).textContent =
-        lines;
+    timer = 120;
 
 
-    document.getElementById(
-        "combo"
-    ).textContent =
-        "x" + combo;
+    updateTimer();
+
+
+    timerInterval =
+        setInterval(
+            () => {
+
+                if (
+                    !gameRunning ||
+                    paused
+                )
+                    return;
+
+
+                timer--;
+
+
+                updateTimer();
+
+
+                if (
+                    timer <= 0
+                ) {
+
+                    endGame();
+
+                }
+
+            },
+            1000
+        );
 
 }
 
 
+function stopTimer() {
+
+    if (timerInterval) {
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval = null;
+
+    }
+
+}
+
+
+function updateTimer() {
+
+    document.getElementById(
+        "timer"
+    ).textContent =
+        timer;
+
+}
+
+
+/* ================= PAUSE ================= */
+
 function togglePause() {
 
-    if (!gameRunning) return;
+    if (!gameRunning)
+        return;
 
 
     paused =
@@ -1252,6 +1558,67 @@ function togglePause() {
 
 }
 
+
+/* ================= UI ================= */
+
+function updateUI() {
+
+    document.getElementById(
+        "score"
+    ).textContent =
+        score;
+
+
+    document.getElementById(
+        "highScore"
+    ).textContent =
+        getBest(gameMode);
+
+
+    document.getElementById(
+        "level"
+    ).textContent =
+        level;
+
+
+    document.getElementById(
+        "lines"
+    ).textContent =
+        lines;
+
+
+    document.getElementById(
+        "combo"
+    ).textContent =
+        "x" + combo;
+
+
+    document.getElementById(
+        "modeLabel"
+    ).textContent =
+        gameMode
+            .replace(
+                "-",
+                " "
+            )
+            .toUpperCase();
+
+
+    const timerCard =
+        document.getElementById(
+            "timerCard"
+        );
+
+
+    timerCard.classList.toggle(
+        "hidden",
+        gameMode !== "time"
+    );
+
+}
+
+
+/* ================= START ================= */
 
 function startGame() {
 
@@ -1318,23 +1685,30 @@ function startGame() {
     drawBoard();
 
 
+    startTimer();
+
     initAudio();
 
 }
 
 
+/* ================= GAME OVER ================= */
+
 function endGame() {
+
+    if (!gameRunning)
+        return;
+
 
     gameRunning = false;
 
     paused = false;
 
 
-    playSound(
-        100,
-        0.3,
-        "sawtooth"
-    );
+    stopTimer();
+
+
+    saveBest();
 
 
     document.getElementById(
@@ -1344,9 +1718,21 @@ function endGame() {
 
 
     document.getElementById(
+        "finalLines"
+    ).textContent =
+        lines;
+
+
+    document.getElementById(
+        "finalLevel"
+    ).textContent =
+        level;
+
+
+    document.getElementById(
         "finalHighScore"
     ).textContent =
-        highScore;
+        getBest(gameMode);
 
 
     document
@@ -1357,12 +1743,25 @@ function endGame() {
             "hidden"
         );
 
+
+    playSound(
+        100,
+        0.3,
+        "sawtooth"
+    );
+
+
+    updateMenu();
+
 }
 
 
+/* ================= AUDIO ================= */
+
 function initAudio() {
 
-    if (!soundEnabled) return;
+    if (!soundEnabled)
+        return;
 
 
     if (!audioContext) {
@@ -1394,7 +1793,8 @@ function playSound(
     type
 ) {
 
-    if (!soundEnabled) return;
+    if (!soundEnabled)
+        return;
 
 
     try {
@@ -1402,7 +1802,8 @@ function playSound(
         initAudio();
 
 
-        if (!audioContext) return;
+        if (!audioContext)
+            return;
 
 
         const oscillator =
@@ -1479,16 +1880,12 @@ function toggleSound() {
 
         initAudio();
 
-        playSound(
-            500,
-            0.1,
-            "sine"
-        );
-
     }
 
 }
 
+
+/* ================= RESTART ================= */
 
 function restartGame() {
 
@@ -1496,6 +1893,64 @@ function restartGame() {
 
 }
 
+
+/* ================= CONTROLS ================= */
+
+document.getElementById(
+    "left"
+).onclick =
+    moveLeft;
+
+
+document.getElementById(
+    "right"
+).onclick =
+    moveRight;
+
+
+document.getElementById(
+    "rotate"
+).onclick =
+    rotatePlayer;
+
+
+document.getElementById(
+    "drop"
+).onclick =
+    hardDrop;
+
+
+document.getElementById(
+    "hold"
+).onclick =
+    holdCurrentPiece;
+
+
+document.getElementById(
+    "startBtn"
+).onclick =
+    startGame;
+
+
+document.getElementById(
+    "pauseBtn"
+).onclick =
+    togglePause;
+
+
+document.getElementById(
+    "restartBtn"
+).onclick =
+    restartGame;
+
+
+document.getElementById(
+    "soundBtn"
+).onclick =
+    toggleSound;
+
+
+/* ================= KEYBOARD ================= */
 
 document.addEventListener(
     "keydown",
@@ -1562,8 +2017,8 @@ document.addEventListener(
 
 
         if (
-            event.key.toLowerCase() ===
-            "c"
+            event.key.toLowerCase()
+            === "c"
         ) {
 
             holdCurrentPiece();
@@ -1572,8 +2027,8 @@ document.addEventListener(
 
 
         if (
-            event.key.toLowerCase() ===
-            "p"
+            event.key.toLowerCase()
+            === "p"
         ) {
 
             togglePause();
@@ -1584,59 +2039,7 @@ document.addEventListener(
 );
 
 
-document.getElementById(
-    "left"
-).onclick =
-    moveLeft;
-
-
-document.getElementById(
-    "right"
-).onclick =
-    moveRight;
-
-
-document.getElementById(
-    "rotate"
-).onclick =
-    rotatePlayer;
-
-
-document.getElementById(
-    "drop"
-).onclick =
-    hardDrop;
-
-
-document.getElementById(
-    "hold"
-).onclick =
-    holdCurrentPiece;
-
-
-document.getElementById(
-    "startBtn"
-).onclick =
-    startGame;
-
-
-document.getElementById(
-    "pauseBtn"
-).onclick =
-    togglePause;
-
-
-document.getElementById(
-    "restartBtn"
-).onclick =
-    restartGame;
-
-
-document.getElementById(
-    "soundBtn"
-).onclick =
-    toggleSound;
-
+/* ================= LOOP ================= */
 
 function update(time = 0) {
 
@@ -1658,7 +2061,7 @@ function update(time = 0) {
 
 
         if (
-            clearingRows.length > 0
+            clearingRows.length
         ) {
 
             clearTimer -=
@@ -1695,11 +2098,12 @@ function update(time = 0) {
 }
 
 
+/* ================= INIT ================= */
+
+updateMenu();
+
 board =
     createBoard();
-
-
-updateUI();
 
 drawBoard();
 
