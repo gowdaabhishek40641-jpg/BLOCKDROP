@@ -1,184 +1,1323 @@
-const canvas =
-    document.getElementById("gameCanvas");
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-const ctx =
-    canvas.getContext("2d");
+const nextCanvas = document.getElementById("nextCanvas");
+const nextCtx = nextCanvas.getContext("2d");
 
-
-const nextCanvas =
-    document.getElementById("nextCanvas");
-
-const nextCtx =
-    nextCanvas.getContext("2d");
+const holdCanvas = document.getElementById("holdCanvas");
+const holdCtx = holdCanvas.getContext("2d");
 
 
-const holdCanvas =
-    document.getElementById("holdCanvas");
-
-const holdCtx =
-    holdCanvas.getContext("2d");
-
+/* =========================================================
+   CONFIG
+========================================================= */
 
 const COLS = 10;
 const ROWS = 20;
 const BLOCK = 30;
-
 
 let board = [];
 
 let player = null;
 
 let nextPiece = null;
-
 let holdPiece = null;
 
-let holdUsed = false;
-
+let canHold = true;
 
 let score = 0;
-
+let bestScore = 0;
 let level = 1;
-
 let lines = 0;
-
 let combo = 0;
 
-
-let gameRunning = false;
-
-let paused = false;
-
-
 let gameMode = "classic";
-
 let difficulty = "normal";
 
+let running = false;
+let paused = false;
 
-let timer = 120;
-
-let timerInterval = null;
-
+let soundEnabled = true;
 
 let dropCounter = 0;
-
 let lastTime = 0;
 
+let dropInterval = 800;
+
+let timeRemaining = 60;
+
+let shakeAmount = 0;
 
 let particles = [];
 
 let clearingRows = [];
-
 let clearTimer = 0;
 
 
-let soundEnabled = true;
+/* =========================================================
+   PIECES
+========================================================= */
 
-let audioContext = null;
-
-
-const DIFFICULTY = {
-
-    normal: {
-        speed: 800,
-        multiplier: 1
-    },
-
-    hard: {
-        speed: 560,
-        multiplier: 1.5
-    },
-
-    insane: {
-        speed: 350,
-        multiplier: 2
-    }
-
-};
-
-
-const SHAPES = [
+const PIECES = [
 
     {
-        shape: [
+        name: "I",
+        matrix: [
             [1,1,1,1]
         ],
         color: "#00e5ff"
     },
 
     {
-        shape: [
+        name: "O",
+        matrix: [
             [1,1],
             [1,1]
         ],
-        color: "#ffd000"
+        color: "#ffe600"
     },
 
     {
-        shape: [
+        name: "T",
+        matrix: [
             [0,1,0],
             [1,1,1]
         ],
-        color: "#a855f7"
+        color: "#b000ff"
     },
 
     {
-        shape: [
+        name: "S",
+        matrix: [
+            [0,1,1],
+            [1,1,0]
+        ],
+        color: "#00ff88"
+    },
+
+    {
+        name: "Z",
+        matrix: [
+            [1,1,0],
+            [0,1,1]
+        ],
+        color: "#ff1744"
+    },
+
+    {
+        name: "J",
+        matrix: [
             [1,0,0],
             [1,1,1]
         ],
-        color: "#ff304f"
+        color: "#2979ff"
     },
 
     {
-        shape: [
+        name: "L",
+        matrix: [
             [0,0,1],
             [1,1,1]
         ],
         color: "#ff8a00"
-    },
-
-    {
-        shape: [
-            [0,1,1],
-            [1,1,0]
-        ],
-        color: "#22c55e"
-    },
-
-    {
-        shape: [
-            [1,1,0],
-            [0,1,1]
-        ],
-        color: "#3b82f6"
     }
 
 ];
 
 
-/* ================= STORAGE ================= */
+/* =========================================================
+   DOM
+========================================================= */
+
+const menuScreen =
+    document.getElementById("menuScreen");
+
+const gameScreen =
+    document.getElementById("gameScreen");
+
+const pauseOverlay =
+    document.getElementById("pauseOverlay");
+
+const startOverlay =
+    document.getElementById("startOverlay");
+
+const gameOverOverlay =
+    document.getElementById("gameOverOverlay");
+
+const countdown =
+    document.getElementById("countdown");
+
+const scoreEl =
+    document.getElementById("score");
+
+const bestEl =
+    document.getElementById("best");
+
+const levelEl =
+    document.getElementById("level");
+
+const linesEl =
+    document.getElementById("lines");
+
+const comboEl =
+    document.getElementById("combo");
+
+const timerEl =
+    document.getElementById("timer");
+
+const modeLabel =
+    document.getElementById("modeLabel");
+
+const difficultyLabel =
+    document.getElementById("difficultyLabel");
+
+const levelFlash =
+    document.getElementById("levelFlash");
+
+const comboFlash =
+    document.getElementById("comboFlash");
+
+const clearFlash =
+    document.getElementById("clearFlash");
+
+
+/* =========================================================
+   LOCAL STORAGE
+========================================================= */
 
 function getBest(mode) {
 
     return Number(
         localStorage.getItem(
-            `blockdrop_${mode}_best`
-        )
-    ) || 0;
+            `blockdrop_best_${mode}`
+        ) || 0
+    );
+
+}
+
+function saveBest(mode, value) {
+
+    localStorage.setItem(
+        `blockdrop_best_${mode}`,
+        value
+    );
+
+}
+
+function updateMenuScores() {
+
+    document.getElementById("classicBest").textContent =
+        getBest("classic");
+
+    document.getElementById("timeBest").textContent =
+        getBest("time");
+
+    document.getElementById("endlessBest").textContent =
+        getBest("endless");
 
 }
 
 
-function saveBest() {
+/* =========================================================
+   BOARD
+========================================================= */
 
-    if (
-        score >
-        getBest(gameMode)
+function createBoard() {
+
+    board = Array.from(
+        { length: ROWS },
+        () => Array(COLS).fill(0)
+    );
+
+}
+
+
+/* =========================================================
+   RANDOM PIECE
+========================================================= */
+
+function randomPiece() {
+
+    const source =
+        PIECES[
+            Math.floor(
+                Math.random() * PIECES.length
+            )
+        ];
+
+    return {
+
+        name: source.name,
+
+        matrix: source.matrix.map(row => [...row]),
+
+        color: source.color
+
+    };
+
+}
+
+
+/* =========================================================
+   SPAWN
+========================================================= */
+
+function spawnPlayer() {
+
+    player = nextPiece || randomPiece();
+
+    nextPiece = randomPiece();
+
+    player.x =
+        Math.floor(
+            (COLS - player.matrix[0].length) / 2
+        );
+
+    player.y = 0;
+
+    canHold = true;
+
+    if (collision()) {
+
+        endGame();
+
+    }
+
+    drawPreviews();
+
+}
+
+
+/* =========================================================
+   COLLISION
+========================================================= */
+
+function collision() {
+
+    for (
+        let y = 0;
+        y < player.matrix.length;
+        y++
     ) {
 
-        localStorage.setItem(
-            `blockdrop_${gameMode}_best`,
-            score
+        for (
+            let x = 0;
+            x < player.matrix[y].length;
+            x++
+        ) {
+
+            if (!player.matrix[y][x])
+                continue;
+
+            const boardX =
+                player.x + x;
+
+            const boardY =
+                player.y + y;
+
+            if (
+                boardX < 0 ||
+                boardX >= COLS ||
+                boardY >= ROWS
+            ) {
+
+                return true;
+
+            }
+
+            if (
+                boardY >= 0 &&
+                board[boardY][boardX]
+            ) {
+
+                return true;
+
+            }
+
+        }
+
+    }
+
+    return false;
+
+}
+
+
+/* =========================================================
+   MOVE
+========================================================= */
+
+function movePlayer(dir) {
+
+    if (!running || paused)
+        return;
+
+    player.x += dir;
+
+    if (collision()) {
+
+        player.x -= dir;
+
+    }
+
+}
+
+
+/* =========================================================
+   ROTATE
+========================================================= */
+
+function rotateMatrix(matrix) {
+
+    return matrix[0].map(
+        (_, index) =>
+            matrix
+                .map(row => row[index])
+                .reverse()
+    );
+
+}
+
+function rotatePlayer() {
+
+    if (!running || paused)
+        return;
+
+    const oldMatrix = player.matrix;
+
+    player.matrix =
+        rotateMatrix(player.matrix);
+
+    const oldX = player.x;
+
+    if (collision()) {
+
+        player.x++;
+
+        if (collision()) {
+
+            player.x =
+                oldX - 1;
+
+            if (collision()) {
+
+                player.x =
+                    oldX;
+
+                player.matrix =
+                    oldMatrix;
+
+            }
+
+        }
+
+    }
+
+    playTone(420, 0.05);
+
+}
+
+
+/* =========================================================
+   SOFT DROP
+========================================================= */
+
+function dropPlayer() {
+
+    if (!running || paused)
+        return;
+
+    player.y++;
+
+    if (collision()) {
+
+        player.y--;
+
+        lockPiece();
+
+    }
+
+    dropCounter = 0;
+
+}
+
+
+/* =========================================================
+   HARD DROP
+========================================================= */
+
+function hardDrop() {
+
+    if (!running || paused)
+        return;
+
+    let distance = 0;
+
+    while (!collision()) {
+
+        player.y++;
+
+        distance++;
+
+    }
+
+    player.y--;
+
+    distance--;
+
+    score += Math.max(0, distance * 2);
+
+    shakeAmount = 7;
+
+    playTone(90, 0.12);
+
+    createDropParticles();
+
+    lockPiece();
+
+}
+
+
+/* =========================================================
+   HOLD
+========================================================= */
+
+function holdCurrent() {
+
+    if (
+        !running ||
+        paused ||
+        !canHold
+    )
+        return;
+
+    if (!holdPiece) {
+
+        holdPiece = {
+
+            name: player.name,
+
+            matrix:
+                player.matrix.map(row => [...row]),
+
+            color: player.color
+
+        };
+
+        spawnPlayer();
+
+    }
+    else {
+
+        const temp = holdPiece;
+
+        holdPiece = {
+
+            name: player.name,
+
+            matrix:
+                player.matrix.map(row => [...row]),
+
+            color: player.color
+
+        };
+
+        player = {
+
+            name: temp.name,
+
+            matrix:
+                temp.matrix.map(row => [...row]),
+
+            color: temp.color,
+
+            x: 0,
+            y: 0
+
+        };
+
+        player.x =
+            Math.floor(
+                (COLS -
+                    player.matrix[0].length) / 2
+            );
+
+    }
+
+    canHold = false;
+
+    drawPreviews();
+
+    playTone(260, 0.08);
+
+}
+
+
+/* =========================================================
+   LOCK
+========================================================= */
+
+function lockPiece() {
+
+    player.matrix.forEach(
+        (row, y) => {
+
+            row.forEach(
+                (value, x) => {
+
+                    if (!value)
+                        return;
+
+                    const boardY =
+                        player.y + y;
+
+                    const boardX =
+                        player.x + x;
+
+                    if (
+                        boardY >= 0 &&
+                        boardY < ROWS
+                    ) {
+
+                        board[boardY][boardX] = {
+                            color: player.color
+                        };
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+    const cleared =
+        clearLines();
+
+    if (cleared === 0) {
+
+        combo = 0;
+
+    }
+
+    spawnPlayer();
+
+    dropCounter = 0;
+
+}
+
+
+/* =========================================================
+   CLEAR LINES
+========================================================= */
+
+function clearLines() {
+
+    let count = 0;
+
+    for (let y = ROWS - 1; y >= 0; y--) {
+
+        if (
+            board[y].every(cell => cell)
+        ) {
+
+            clearingRows.push(y);
+
+            count++;
+
+        }
+
+    }
+
+    if (count > 0) {
+
+        clearTimer = 180;
+
+        lines += count;
+
+        combo++;
+
+        const base =
+            [0, 100, 300, 500, 800][count] || 800;
+
+        const comboBonus =
+            combo > 1
+                ? combo * 100
+                : 0;
+
+        score +=
+            (base + comboBonus) * level;
+
+        if (
+            score > bestScore
+        ) {
+
+            bestScore = score;
+
+        }
+
+        createLineParticles();
+
+        shakeAmount =
+            5 + count * 3;
+
+        clearFlash.classList.remove("show");
+
+        void clearFlash.offsetWidth;
+
+        clearFlash.classList.add("show");
+
+        if (combo > 1) {
+
+            showCombo();
+
+        }
+
+        playTone(
+            300 + count * 100,
+            0.15
+        );
+
+        const previousLevel =
+            level;
+
+        level =
+            Math.floor(lines / 10) + 1;
+
+        if (
+            level > previousLevel
+        ) {
+
+            showLevelUp();
+
+            playTone(700, 0.25);
+
+        }
+
+        updateSpeed();
+
+        saveBest(
+            gameMode,
+            bestScore
+        );
+
+        updateUI();
+
+        return count;
+
+    }
+
+    return 0;
+
+}
+
+
+/* =========================================================
+   FINISH CLEAR
+========================================================= */
+
+function finishLineClear() {
+
+    if (!clearingRows.length)
+        return;
+
+    clearingRows
+        .sort((a, b) => b - a)
+        .forEach(row => {
+
+            board.splice(row, 1);
+
+            board.unshift(
+                Array(COLS).fill(0)
+            );
+
+        });
+
+    clearingRows = [];
+
+}
+
+
+/* =========================================================
+   SPEED
+========================================================= */
+
+function updateSpeed() {
+
+    const baseSpeed =
+        difficulty === "normal"
+            ? 800
+            : difficulty === "hard"
+                ? 550
+                : 350;
+
+    dropInterval =
+        Math.max(
+            80,
+            baseSpeed -
+            (level - 1) * 55
+        );
+
+}
+
+
+/* =========================================================
+   DRAW BOARD
+========================================================= */
+
+function drawBoard() {
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.save();
+
+    if (shakeAmount > 0) {
+
+        ctx.translate(
+            (Math.random() - 0.5) *
+                shakeAmount,
+            (Math.random() - 0.5) *
+                shakeAmount
+        );
+
+        shakeAmount *= 0.88;
+
+        if (shakeAmount < 0.3)
+            shakeAmount = 0;
+
+    }
+
+    drawGrid();
+
+    board.forEach(
+        (row, y) => {
+
+            row.forEach(
+                (cell, x) => {
+
+                    if (cell) {
+
+                        drawBlock(
+                            ctx,
+                            x * BLOCK,
+                            y * BLOCK,
+                            BLOCK,
+                            cell.color
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+
+    if (player) {
+
+        drawGhost();
+
+        player.matrix.forEach(
+            (row, y) => {
+
+                row.forEach(
+                    (value, x) => {
+
+                        if (value) {
+
+                            drawBlock(
+                                ctx,
+                                (player.x + x) * BLOCK,
+                                (player.y + y) * BLOCK,
+                                BLOCK,
+                                player.color
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   GRID
+========================================================= */
+
+function drawGrid() {
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,0.035)";
+
+    ctx.lineWidth = 1;
+
+    for (
+        let x = 0;
+        x <= COLS;
+        x++
+    ) {
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x * BLOCK,
+            0
+        );
+
+        ctx.lineTo(
+            x * BLOCK,
+            canvas.height
+        );
+
+        ctx.stroke();
+
+    }
+
+    for (
+        let y = 0;
+        y <= ROWS;
+        y++
+    ) {
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            0,
+            y * BLOCK
+        );
+
+        ctx.lineTo(
+            canvas.width,
+            y * BLOCK
+        );
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* =========================================================
+   BLOCK
+========================================================= */
+
+function drawBlock(
+    context,
+    x,
+    y,
+    size,
+    color
+) {
+
+    context.fillStyle = color;
+
+    context.shadowColor = color;
+    context.shadowBlur = 12;
+
+    context.fillRect(
+        x + 2,
+        y + 2,
+        size - 4,
+        size - 4
+    );
+
+    context.shadowBlur = 0;
+
+    context.strokeStyle =
+        "rgba(255,255,255,0.25)";
+
+    context.strokeRect(
+        x + 3,
+        y + 3,
+        size - 6,
+        size - 6
+    );
+
+}
+
+
+/* =========================================================
+   GHOST
+========================================================= */
+
+function drawGhost() {
+
+    const oldY =
+        player.y;
+
+    let ghostY =
+        player.y;
+
+    while (true) {
+
+        player.y++;
+
+        if (collision()) {
+
+            player.y--;
+
+            break;
+
+        }
+
+        ghostY =
+            player.y;
+
+    }
+
+    player.y =
+        oldY;
+
+    ctx.globalAlpha = 0.15;
+
+    player.matrix.forEach(
+        (row, y) => {
+
+            row.forEach(
+                (value, x) => {
+
+                    if (value) {
+
+                        ctx.fillStyle =
+                            player.color;
+
+                        ctx.fillRect(
+                            (player.x + x) *
+                                BLOCK + 4,
+                            (ghostY + y) *
+                                BLOCK + 4,
+                            BLOCK - 8,
+                            BLOCK - 8
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* =========================================================
+   PREVIEWS
+========================================================= */
+
+function drawPreviews() {
+
+    drawPreview(
+        nextCtx,
+        nextCanvas,
+        nextPiece
+    );
+
+    drawPreview(
+        holdCtx,
+        holdCanvas,
+        holdPiece
+    );
+
+}
+
+function drawPreview(
+    context,
+    targetCanvas,
+    piece
+) {
+
+    context.clearRect(
+        0,
+        0,
+        targetCanvas.width,
+        targetCanvas.height
+    );
+
+    if (!piece)
+        return;
+
+    const size = 22;
+
+    const width =
+        piece.matrix[0].length * size;
+
+    const height =
+        piece.matrix.length * size;
+
+    const offsetX =
+        (targetCanvas.width - width) / 2;
+
+    const offsetY =
+        (targetCanvas.height - height) / 2;
+
+    piece.matrix.forEach(
+        (row, y) => {
+
+            row.forEach(
+                (value, x) => {
+
+                    if (value) {
+
+                        drawBlock(
+                            context,
+                            offsetX +
+                                x * size,
+                            offsetY +
+                                y * size,
+                            size,
+                            piece.color
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   PARTICLES
+========================================================= */
+
+function createParticle(
+    x,
+    y,
+    color
+) {
+
+    particles.push({
+
+        x,
+        y,
+
+        vx:
+            (Math.random() - 0.5) *
+            4,
+
+        vy:
+            (Math.random() - 0.5) *
+            4,
+
+        life: 1,
+
+        color
+
+    });
+
+}
+
+function createDropParticles() {
+
+    if (!player)
+        return;
+
+    for (
+        let i = 0;
+        i < 15;
+        i++
+    ) {
+
+        createParticle(
+            player.x * BLOCK,
+            player.y * BLOCK,
+            player.color
+        );
+
+    }
+
+}
+
+function createLineParticles() {
+
+    clearingRows.forEach(
+        row => {
+
+            for (
+                let i = 0;
+                i < 25;
+                i++
+            ) {
+
+                createParticle(
+                    Math.random() *
+                        canvas.width,
+
+                    row * BLOCK +
+                        Math.random() * BLOCK,
+
+                    "#ffffff"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+function updateParticles() {
+
+    particles.forEach(
+        particle => {
+
+            particle.x +=
+                particle.vx;
+
+            particle.y +=
+                particle.vy;
+
+            particle.vy +=
+                0.08;
+
+            particle.life -=
+                0.025;
+
+        }
+    );
+
+    particles =
+        particles.filter(
+            particle =>
+                particle.life > 0
+        );
+
+}
+
+function drawParticles() {
+
+    particles.forEach(
+        particle => {
+
+            ctx.globalAlpha =
+                particle.life;
+
+            ctx.fillStyle =
+                particle.color;
+
+            ctx.fillRect(
+                particle.x,
+                particle.y,
+                3,
+                3
+            );
+
+        }
+    );
+
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* =========================================================
+   EFFECTS
+========================================================= */
+
+function showLevelUp() {
+
+    levelFlash.classList.remove("show");
+
+    void levelFlash.offsetWidth;
+
+    levelFlash.classList.add("show");
+
+}
+
+function showCombo() {
+
+    comboFlash.textContent =
+        `COMBO ×${combo}`;
+
+    comboFlash.classList.remove("show");
+
+    void comboFlash.offsetWidth;
+
+    comboFlash.classList.add("show");
+
+}
+
+
+/* =========================================================
+   SOUND
+========================================================= */
+
+let audioContext = null;
+
+function playTone(
+    frequency,
+    duration
+) {
+
+    if (!soundEnabled)
+        return;
+
+    try {
+
+        if (!audioContext) {
+
+            audioContext =
+                new (
+                    window.AudioContext ||
+                    window.webkitAudioContext
+                )();
+
+        }
+
+        const oscillator =
+            audioContext.createOscillator();
+
+        const gain =
+            audioContext.createGain();
+
+        oscillator.frequency.value =
+            frequency;
+
+        oscillator.type =
+            "square";
+
+        gain.gain.value =
+            0.04;
+
+        oscillator.connect(gain);
+
+        gain.connect(
+            audioContext.destination
+        );
+
+        oscillator.start();
+
+        oscillator.stop(
+            audioContext.currentTime +
+            duration
+        );
+
+    }
+    catch (error) {
+
+        console.log(
+            "Audio unavailable"
         );
 
     }
@@ -186,7 +1325,453 @@ function saveBest() {
 }
 
 
-/* ================= MENU ================= */
+/* =========================================================
+   UI
+========================================================= */
+
+function updateUI() {
+
+    scoreEl.textContent =
+        score;
+
+    bestEl.textContent =
+        bestScore;
+
+    levelEl.textContent =
+        level;
+
+    linesEl.textContent =
+        lines;
+
+    comboEl.textContent =
+        combo;
+
+    modeLabel.textContent =
+        gameMode.toUpperCase();
+
+    difficultyLabel.textContent =
+        difficulty.toUpperCase();
+
+    if (
+        gameMode === "time"
+    ) {
+
+        timerEl.textContent =
+            `${Math.max(
+                0,
+                Math.ceil(
+                    timeRemaining
+                )
+            )}s`;
+
+    }
+    else {
+
+        timerEl.textContent =
+            "∞";
+
+    }
+
+}
+
+
+/* =========================================================
+   START GAME
+========================================================= */
+
+function startGame() {
+
+    menuScreen.classList.remove("active");
+
+    gameScreen.classList.add("active");
+
+    createBoard();
+
+    score = 0;
+
+    level = 1;
+
+    lines = 0;
+
+    combo = 0;
+
+    holdPiece = null;
+
+    nextPiece = randomPiece();
+
+    bestScore =
+        getBest(gameMode);
+
+    timeRemaining =
+        gameMode === "time"
+            ? 60
+            : Infinity;
+
+    clearingRows = [];
+
+    particles = [];
+
+    shakeAmount = 0;
+
+    updateSpeed();
+
+    running = true;
+
+    paused = false;
+
+    pauseOverlay.classList.remove(
+        "active"
+    );
+
+    gameOverOverlay.classList.remove(
+        "active"
+    );
+
+    spawnPlayer();
+
+    updateUI();
+
+    startCountdown();
+
+}
+
+
+/* =========================================================
+   COUNTDOWN
+========================================================= */
+
+function startCountdown() {
+
+    startOverlay.classList.add(
+        "active"
+    );
+
+    let count = 3;
+
+    countdown.textContent =
+        count;
+
+    const timer =
+        setInterval(
+            () => {
+
+                count--;
+
+                if (count > 0) {
+
+                    countdown.textContent =
+                        count;
+
+                    playTone(
+                        350,
+                        0.08
+                    );
+
+                }
+                else {
+
+                    countdown.textContent =
+                        "GO";
+
+                    playTone(
+                        800,
+                        0.15
+                    );
+
+                    setTimeout(
+                        () => {
+
+                            startOverlay.classList.remove(
+                                "active"
+                            );
+
+                        },
+                        500
+                    );
+
+                    clearInterval(timer);
+
+                }
+
+            },
+            700
+        );
+
+}
+
+
+/* =========================================================
+   PAUSE
+========================================================= */
+
+function togglePause() {
+
+    if (!running)
+        return;
+
+    paused =
+        !paused;
+
+    pauseOverlay.classList.toggle(
+        "active",
+        paused
+    );
+
+}
+
+
+/* =========================================================
+   END GAME
+========================================================= */
+
+function endGame() {
+
+    running = false;
+
+    paused = false;
+
+    if (
+        score > getBest(gameMode)
+    ) {
+
+        saveBest(
+            gameMode,
+            score
+        );
+
+    }
+
+    gameOverOverlay.classList.add(
+        "active"
+    );
+
+    document.getElementById(
+        "finalScore"
+    ).textContent = score;
+
+    document.getElementById(
+        "finalLines"
+    ).textContent = lines;
+
+    document.getElementById(
+        "finalLevel"
+    ).textContent = level;
+
+    updateMenuScores();
+
+    playTone(
+        100,
+        0.3
+    );
+
+}
+
+
+/* =========================================================
+   MENU
+========================================================= */
+
+function returnToMenu() {
+
+    running = false;
+
+    paused = false;
+
+    pauseOverlay.classList.remove(
+        "active"
+    );
+
+    gameOverOverlay.classList.remove(
+        "active"
+    );
+
+    startOverlay.classList.remove(
+        "active"
+    );
+
+    gameScreen.classList.remove(
+        "active"
+    );
+
+    menuScreen.classList.add(
+        "active"
+    );
+
+    updateMenuScores();
+
+}
+
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
+
+function update(time = 0) {
+
+    const delta =
+        time - lastTime;
+
+    lastTime =
+        time;
+
+    if (
+        running &&
+        !paused &&
+        !startOverlay.classList.contains(
+            "active"
+        )
+    ) {
+
+        dropCounter += delta;
+
+        if (
+            dropCounter >
+            dropInterval
+        ) {
+
+            dropPlayer();
+
+        }
+
+        if (
+            gameMode === "time"
+        ) {
+
+            timeRemaining -=
+                delta / 1000;
+
+            if (
+                timeRemaining <= 0
+            ) {
+
+                timeRemaining = 0;
+
+                endGame();
+
+            }
+
+        }
+
+        if (
+            clearTimer > 0
+        ) {
+
+            clearTimer -=
+                delta;
+
+            if (
+                clearTimer <= 0
+            ) {
+
+                finishLineClear();
+
+            }
+
+        }
+
+    }
+
+    updateParticles();
+
+    drawBoard();
+
+    drawParticles();
+
+    updateUI();
+
+    requestAnimationFrame(update);
+
+}
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.code ===
+            "ArrowLeft"
+        ) {
+
+            event.preventDefault();
+
+            movePlayer(-1);
+
+        }
+
+        if (
+            event.code ===
+            "ArrowRight"
+        ) {
+
+            event.preventDefault();
+
+            movePlayer(1);
+
+        }
+
+        if (
+            event.code ===
+            "ArrowDown"
+        ) {
+
+            event.preventDefault();
+
+            dropPlayer();
+
+        }
+
+        if (
+            event.code ===
+            "ArrowUp"
+        ) {
+
+            event.preventDefault();
+
+            rotatePlayer();
+
+        }
+
+        if (
+            event.code ===
+            "Space"
+        ) {
+
+            event.preventDefault();
+
+            hardDrop();
+
+        }
+
+        if (
+            event.code ===
+            "KeyC"
+        ) {
+
+            holdCurrent();
+
+        }
+
+        if (
+            event.code ===
+            "KeyP"
+        ) {
+
+            togglePause();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   MENU SELECTION
+========================================================= */
 
 document
     .querySelectorAll(".mode-btn")
@@ -200,25 +1785,18 @@ document
                     .querySelectorAll(
                         ".mode-btn"
                     )
-                    .forEach(
-                        item =>
-                            item.classList
-                                .remove(
-                                    "active"
-                                )
+                    .forEach(btn =>
+                        btn.classList.remove(
+                            "selected"
+                        )
                     );
 
-
                 button.classList.add(
-                    "active"
+                    "selected"
                 );
-
 
                 gameMode =
                     button.dataset.mode;
-
-
-                updateMenu();
 
             }
         );
@@ -238,19 +1816,15 @@ document
                     .querySelectorAll(
                         ".difficulty-btn"
                     )
-                    .forEach(
-                        item =>
-                            item.classList
-                                .remove(
-                                    "active"
-                                )
+                    .forEach(btn =>
+                        btn.classList.remove(
+                            "selected"
+                        )
                     );
 
-
                 button.classList.add(
-                    "active"
+                    "selected"
                 );
-
 
                 difficulty =
                     button.dataset.difficulty;
@@ -261,1852 +1835,196 @@ document
     });
 
 
-function updateMenu() {
+/* =========================================================
+   BUTTONS
+========================================================= */
 
-    document.getElementById(
-        "classicBest"
-    ).textContent =
-        getBest("classic");
-
-
-    document.getElementById(
-        "timeBest"
-    ).textContent =
-        getBest("time");
-
-
-    document.getElementById(
-        "endlessBest"
-    ).textContent =
-        getBest("endless");
-
-}
-
-
-function showGameScreen() {
-
-    document
-        .getElementById(
-            "menuScreen"
-        )
-        .classList.add(
-            "hidden"
-        );
-
-
-    document
-        .getElementById(
-            "gameScreen"
-        )
-        .classList.remove(
-            "hidden"
-        );
-
-}
-
-
-function showMenuScreen() {
-
-    stopTimer();
-
-    gameRunning = false;
-
-    paused = false;
-
-
-    document
-        .getElementById(
-            "gameScreen"
-        )
-        .classList.add(
-            "hidden"
-        );
-
-
-    document
-        .getElementById(
-            "menuScreen"
-        )
-        .classList.remove(
-            "hidden"
-        );
-
-
-    updateMenu();
-
-}
-
-
-document.getElementById(
-    "playBtn"
-).onclick = () => {
-
-    showGameScreen();
-
-    startGame();
-
-};
-
-
-document.getElementById(
-    "menuBtn"
-).onclick =
-    showMenuScreen;
-
-
-document.getElementById(
-    "resultMenuBtn"
-).onclick =
-    showMenuScreen;
-
-
-/* ================= BOARD ================= */
-
-function createBoard() {
-
-    return Array.from(
-        { length: ROWS },
-        () => Array(COLS).fill(null)
+document
+    .getElementById("playBtn")
+    .addEventListener(
+        "click",
+        startGame
     );
 
-}
-
-
-function createRandomPiece() {
-
-    const data =
-        SHAPES[
-            Math.floor(
-                Math.random() *
-                SHAPES.length
-            )
-        ];
-
-
-    return {
-
-        shape:
-            data.shape.map(
-                row => [...row]
-            ),
-
-        color:
-            data.color,
-
-        x:
-            Math.floor(
-                (
-                    COLS -
-                    data.shape[0].length
-                ) / 2
-            ),
-
-        y: 0
-
-    };
-
-}
-
-
-/* ================= SPAWN ================= */
-
-function spawnPlayer() {
-
-    if (!nextPiece) {
-
-        player =
-            createRandomPiece();
-
-        nextPiece =
-            createRandomPiece();
-
-    } else {
-
-        player =
-            nextPiece;
-
-        nextPiece =
-            createRandomPiece();
-
-    }
-
-
-    holdUsed = false;
-
-
-    if (collision()) {
-
-        endGame();
-
-    }
-
-
-    drawNext();
-
-}
-
-
-/* ================= COLLISION ================= */
-
-function collisionAt(
-    px,
-    py,
-    shape
-) {
-
-    for (
-        let y = 0;
-        y < shape.length;
-        y++
-    ) {
-
-        for (
-            let x = 0;
-            x < shape[y].length;
-            x++
-        ) {
-
-            if (!shape[y][x])
-                continue;
-
-
-            const bx =
-                px + x;
-
-            const by =
-                py + y;
-
-
-            if (
-                bx < 0 ||
-                bx >= COLS ||
-                by >= ROWS
-            ) {
-
-                return true;
-
-            }
-
-
-            if (
-                by >= 0 &&
-                board[by][bx]
-            ) {
-
-                return true;
-
-            }
-
-        }
-
-    }
-
-    return false;
-
-}
-
-
-function collision() {
-
-    return collisionAt(
-        player.x,
-        player.y,
-        player.shape
+document
+    .getElementById("pauseBtn")
+    .addEventListener(
+        "click",
+        togglePause
     );
 
-}
+document
+    .getElementById("resumeBtn")
+    .addEventListener(
+        "click",
+        togglePause
+    );
 
+document
+    .getElementById("menuBtn")
+    .addEventListener(
+        "click",
+        returnToMenu
+    );
 
-/* ================= DRAW ================= */
+document
+    .getElementById("backMenuBtn")
+    .addEventListener(
+        "click",
+        returnToMenu
+    );
 
-function drawBlock(
-    context,
-    x,
-    y,
-    color,
-    size
-) {
-
-    context.fillStyle =
-        color;
-
-
-    context.fillRect(
-        x * size + 2,
-        y * size + 2,
-        size - 4,
-        size - 4
+document
+    .getElementById("restartBtn")
+    .addEventListener(
+        "click",
+        startGame
     );
 
 
-    context.strokeStyle =
-        "#ffffff44";
-
-
-    context.strokeRect(
-        x * size + 2,
-        y * size + 2,
-        size - 4,
-        size - 4
-    );
-
-}
-
-
-function drawBoard() {
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    for (
-        let y = 0;
-        y < ROWS;
-        y++
-    ) {
-
-        for (
-            let x = 0;
-            x < COLS;
-            x++
-        ) {
-
-            if (board[y][x]) {
-
-                if (
-                    !clearingRows
-                        .includes(y)
-                ) {
-
-                    drawBlock(
-                        ctx,
-                        x,
-                        y,
-                        board[y][x],
-                        BLOCK
-                    );
-
-                }
-
-            } else {
-
-                ctx.strokeStyle =
-                    "#151515";
-
-
-                ctx.strokeRect(
-                    x * BLOCK,
-                    y * BLOCK,
-                    BLOCK,
-                    BLOCK
-                );
-
-            }
-
-        }
-
-    }
-
-
-    if (player) {
-
-        drawGhost();
-
-        drawPlayer();
-
-    }
-
-
-    drawParticles();
-
-}
-
-
-function drawPlayer() {
-
-    player.shape.forEach(
-        (row, y) => {
-
-            row.forEach(
-                (value, x) => {
-
-                    if (value) {
-
-                        drawBlock(
-                            ctx,
-                            player.x + x,
-                            player.y + y,
-                            player.color,
-                            BLOCK
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-    );
-
-}
-
-
-function getGhostY() {
-
-    let y =
-        player.y;
-
-
-    while (
-        !collisionAt(
-            player.x,
-            y + 1,
-            player.shape
-        )
-    ) {
-
-        y++;
-
-    }
-
-
-    return y;
-
-}
-
-
-function drawGhost() {
-
-    const ghost =
-        getGhostY();
-
-
-    player.shape.forEach(
-        (row, y) => {
-
-            row.forEach(
-                (value, x) => {
-
-                    if (value) {
-
-                        ctx.fillStyle =
-                            player.color +
-                            "25";
-
-
-                        ctx.fillRect(
-
-                            (
-                                player.x +
-                                x
-                            ) * BLOCK + 5,
-
-                            (
-                                ghost +
-                                y
-                            ) * BLOCK + 5,
-
-                            BLOCK - 10,
-
-                            BLOCK - 10
-
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-    );
-
-}
-
-
-/* ================= MOVEMENT ================= */
-
-function moveLeft() {
-
-    if (
-        !gameRunning ||
-        paused
-    ) return;
-
-
-    player.x--;
-
-
-    if (collision())
-        player.x++;
-
-
-    drawBoard();
-
-}
-
-
-function moveRight() {
-
-    if (
-        !gameRunning ||
-        paused
-    ) return;
-
-
-    player.x++;
-
-
-    if (collision())
-        player.x--;
-
-
-    drawBoard();
-
-}
-
-
-function moveDown() {
-
-    if (
-        !gameRunning ||
-        paused
-    ) return;
-
-
-    player.y++;
-
-
-    if (collision()) {
-
-        player.y--;
-
-        lockPiece();
-
-    }
-
-
-    dropCounter = 0;
-
-    drawBoard();
-
-}
-
-
-function rotatePlayer() {
-
-    if (
-        !gameRunning ||
-        paused
-    ) return;
-
-
-    const old =
-        player.shape;
-
-
-    player.shape =
-        player.shape[0].map(
-            (_, index) =>
-                player.shape
-                    .map(
-                        row =>
-                            row[index]
-                    )
-                    .reverse()
-        );
-
-
-    if (collision()) {
-
-        player.shape =
-            old;
-
-    }
-
-
-    drawBoard();
-
-}
-
-
-function hardDrop() {
-
-    if (
-        !gameRunning ||
-        paused
-    ) return;
-
-
-    const ghost =
-        getGhostY();
-
-
-    score +=
-        (ghost - player.y) * 2;
-
-
-    player.y =
-        ghost;
-
-
-    lockPiece();
-
-
-    updateUI();
-
-}
-
-
-/* ================= LOCK ================= */
-
-function lockPiece() {
-
-    player.shape.forEach(
-        (row, y) => {
-
-            row.forEach(
-                (value, x) => {
-
-                    if (value) {
-
-                        board[
-                            player.y + y
-                        ][
-                            player.x + x
-                        ] =
-                            player.color;
-
-                    }
-
-                }
-            );
+/* =========================================================
+   SOUND
+========================================================= */
+
+document
+    .getElementById("soundBtn")
+    .addEventListener(
+        "click",
+        () => {
+
+            soundEnabled =
+                !soundEnabled;
+
+            document.getElementById(
+                "soundBtn"
+            ).textContent =
+                soundEnabled
+                    ? "🔊"
+                    : "🔇";
 
         }
     );
 
 
-    const rows =
-        findFullRows();
-
-
-    if (
-        rows.length
-    ) {
-
-        clearingRows =
-            rows;
-
-
-        combo++;
-
-
-        awardPoints(
-            rows.length
-        );
-
-
-        createParticles(
-            rows
-        );
-
-
-        clearTimer =
-            180;
-
-
-    } else {
-
-        combo = 0;
-
-        spawnPlayer();
-
-    }
-
-
-    updateUI();
-
-}
-
-
-function findFullRows() {
-
-    const rows = [];
-
-
-    for (
-        let y = 0;
-        y < ROWS;
-        y++
-    ) {
-
-        if (
-            board[y].every(
-                cell =>
-                    cell !== null
-            )
-        ) {
-
-            rows.push(y);
-
-        }
-
-    }
-
-
-    return rows;
-
-}
-
-
-function finishLineClear() {
-
-    clearingRows
-        .sort(
-            (a,b) => b-a
-        )
-        .forEach(
-            row => {
-
-                board.splice(
-                    row,
-                    1
-                );
-
-
-                board.unshift(
-                    Array(COLS)
-                        .fill(null)
-                );
-
-            }
-        );
-
-
-    clearingRows = [];
-
-    clearTimer = 0;
-
-
-    spawnPlayer();
-
-}
-
-
-/* ================= SCORE ================= */
-
-function awardPoints(count) {
-
-    const points = {
-
-        1: 100,
-
-        2: 300,
-
-        3: 500,
-
-        4: 800
-
-    };
-
-
-    let value =
-        points[count] || 800;
-
-
-    value *= level;
-
-
-    value *=
-        DIFFICULTY[
-            difficulty
-        ].multiplier;
-
-
-    if (combo > 1) {
-
-        value +=
-            (
-                combo - 1
-            ) *
-            100 *
-            level;
-
-    }
-
-
-    if (
-        gameMode === "time"
-    ) {
-
-        value *= 1.25;
-
-    }
-
-
-    score +=
-        Math.floor(value);
-
-
-    lines += count;
-
-
-    level =
-        Math.floor(
-            lines / 5
-        ) + 1;
-
-
-    if (count === 4) {
-
-        showMessage(
-            "BLOCKDROP!"
-        );
-
-    } else if (
-        combo > 1
-    ) {
-
-        showMessage(
-            `COMBO x${combo}`
-        );
-
-    }
-
-
-    playSound(
-        550,
-        0.12,
-        "sine"
+/* =========================================================
+   MOBILE CONTROLS
+========================================================= */
+
+document
+    .getElementById("leftBtn")
+    .addEventListener(
+        "click",
+        () => movePlayer(-1)
+    );
+
+document
+    .getElementById("rightBtn")
+    .addEventListener(
+        "click",
+        () => movePlayer(1)
+    );
+
+document
+    .getElementById("downBtn")
+    .addEventListener(
+        "click",
+        dropPlayer
+    );
+
+document
+    .getElementById("rotateBtn")
+    .addEventListener(
+        "click",
+        rotatePlayer
+    );
+
+document
+    .getElementById("dropBtn")
+    .addEventListener(
+        "click",
+        hardDrop
     );
 
 
-    saveBest();
-
-}
-
-
-/* ================= HOLD ================= */
-
-function holdCurrentPiece() {
-
-    if (
-        !gameRunning ||
-        paused ||
-        holdUsed
-    ) return;
-
-
-    holdUsed = true;
-
-
-    if (!holdPiece) {
-
-        holdPiece = {
-
-            shape:
-                player.shape.map(
-                    row => [...row]
-                ),
-
-            color:
-                player.color
-
-        };
-
-
-        spawnPlayer();
-
-    } else {
-
-        const temp =
-            holdPiece;
-
-
-        holdPiece = {
-
-            shape:
-                player.shape.map(
-                    row => [...row]
-                ),
-
-            color:
-                player.color
-
-        };
-
-
-        player = {
-
-            shape:
-                temp.shape.map(
-                    row => [...row]
-                ),
-
-            color:
-                temp.color,
-
-            x:
-                Math.floor(
-                    (
-                        COLS -
-                        temp.shape[0].length
-                    ) / 2
-                ),
-
-            y: 0
-
-        };
-
-    }
-
-
-    drawHold();
-
-    drawBoard();
-
-}
-
-
-/* ================= PREVIEWS ================= */
-
-function drawNext() {
-
-    nextCtx.clearRect(
-        0,
-        0,
-        120,
-        120
-    );
-
-
-    if (nextPiece)
-        drawMini(
-            nextCtx,
-            nextPiece
-        );
-
-}
-
-
-function drawHold() {
-
-    holdCtx.clearRect(
-        0,
-        0,
-        120,
-        120
-    );
-
-
-    if (holdPiece)
-        drawMini(
-            holdCtx,
-            holdPiece
-        );
-
-}
-
-
-function drawMini(
-    context,
-    piece
-) {
-
-    const size = 25;
-
-
-    const width =
-        piece.shape[0].length *
-        size;
-
-
-    const height =
-        piece.shape.length *
-        size;
-
-
-    const offsetX =
-        (
-            120 -
-            width
-        ) / 2;
-
-
-    const offsetY =
-        (
-            120 -
-            height
-        ) / 2;
-
-
-    piece.shape.forEach(
-        (row,y) => {
-
-            row.forEach(
-                (value,x) => {
-
-                    if (value) {
-
-                        context.fillStyle =
-                            piece.color;
-
-
-                        context.fillRect(
-
-                            offsetX +
-                            x * size,
-
-                            offsetY +
-                            y * size,
-
-                            size - 3,
-
-                            size - 3
-
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-    );
-
-}
-
-
-/* ================= PARTICLES ================= */
-
-function createParticles(rows) {
-
-    rows.forEach(
-        row => {
-
-            for (
-                let x = 0;
-                x < COLS;
-                x++
-            ) {
-
-                for (
-                    let i = 0;
-                    i < 3;
-                    i++
-                ) {
-
-                    particles.push({
-
-                        x:
-                            x * BLOCK +
-                            BLOCK / 2,
-
-                        y:
-                            row * BLOCK +
-                            BLOCK / 2,
-
-                        vx:
-                            (
-                                Math.random()
-                                - 0.5
-                            ) * 5,
-
-                        vy:
-                            (
-                                Math.random()
-                                - 1
-                            ) * 5,
-
-                        life: 1,
-
-                        size:
-                            Math.random() *
-                            4 + 2
-
-                    });
-
-                }
-
-            }
-
-        }
-    );
-
-}
-
-
-function drawParticles() {
-
-    particles.forEach(
-        p => {
-
-            ctx.globalAlpha =
-                p.life;
-
-
-            ctx.fillStyle =
-                "#ff304f";
-
-
-            ctx.fillRect(
-                p.x,
-                p.y,
-                p.size,
-                p.size
-            );
-
-
-            p.x += p.vx;
-
-            p.y += p.vy;
-
-            p.vy += 0.15;
-
-            p.life -= 0.025;
-
-        }
-    );
-
-
-    ctx.globalAlpha = 1;
-
-
-    particles =
-        particles.filter(
-            p =>
-                p.life > 0
-        );
-
-}
-
-
-/* ================= MESSAGE ================= */
-
-function showMessage(text) {
-
-    const element =
-        document.getElementById(
-            "message"
-        );
-
-
-    if (!element)
-        return;
-
-
-    element.textContent =
-        text;
-
-
-    element.classList.remove(
-        "show"
-    );
-
-
-    void element.offsetWidth;
-
-
-    element.classList.add(
-        "show"
-    );
-
-}
-
-
-/* ================= SPEED ================= */
-
-function getDropSpeed() {
-
-    let speed =
-        DIFFICULTY[
-            difficulty
-        ].speed;
-
-
-    speed -=
-        (
-            level - 1
-        ) * 60;
-
-
-    if (
-        gameMode === "endless"
-    ) {
-
-        speed -=
-            level * 15;
-
-    }
-
-
-    return Math.max(
-        80,
-        speed
-    );
-
-}
-
-
-/* ================= TIMER ================= */
-
-function startTimer() {
-
-    stopTimer();
-
-
-    if (
-        gameMode !== "time"
-    )
-        return;
-
-
-    timer = 120;
-
-
-    updateTimer();
-
-
-    timerInterval =
-        setInterval(
-            () => {
-
-                if (
-                    !gameRunning ||
-                    paused
-                )
-                    return;
-
-
-                timer--;
-
-
-                updateTimer();
-
-
-                if (
-                    timer <= 0
-                ) {
-
-                    endGame();
-
-                }
-
-            },
-            1000
-        );
-
-}
-
-
-function stopTimer() {
-
-    if (timerInterval) {
-
-        clearInterval(
-            timerInterval
-        );
-
-        timerInterval = null;
-
-    }
-
-}
-
-
-function updateTimer() {
-
-    document.getElementById(
-        "timer"
-    ).textContent =
-        timer;
-
-}
-
-
-/* ================= PAUSE ================= */
-
-function togglePause() {
-
-    if (!gameRunning)
-        return;
-
-
-    paused =
-        !paused;
-
-
-    document
-        .getElementById(
-            "pauseOverlay"
-        )
-        .classList.toggle(
-            "hidden",
-            !paused
-        );
-
-
-    document.getElementById(
-        "pauseBtn"
-    ).textContent =
-        paused
-            ? "RESUME"
-            : "PAUSE";
-
-}
-
-
-/* ================= UI ================= */
-
-function updateUI() {
-
-    document.getElementById(
-        "score"
-    ).textContent =
-        score;
-
-
-    document.getElementById(
-        "highScore"
-    ).textContent =
-        getBest(gameMode);
-
-
-    document.getElementById(
-        "level"
-    ).textContent =
-        level;
-
-
-    document.getElementById(
-        "lines"
-    ).textContent =
-        lines;
-
-
-    document.getElementById(
-        "combo"
-    ).textContent =
-        "x" + combo;
-
-
-    document.getElementById(
-        "modeLabel"
-    ).textContent =
-        gameMode
-            .replace(
-                "-",
-                " "
-            )
-            .toUpperCase();
-
-
-    const timerCard =
-        document.getElementById(
-            "timerCard"
-        );
-
-
-    timerCard.classList.toggle(
-        "hidden",
-        gameMode !== "time"
-    );
-
-}
-
-
-/* ================= START ================= */
-
-function startGame() {
-
-    board =
-        createBoard();
-
-
-    score = 0;
-
-    level = 1;
-
-    lines = 0;
-
-    combo = 0;
-
-
-    player = null;
-
-    nextPiece = null;
-
-    holdPiece = null;
-
-
-    particles = [];
-
-    clearingRows = [];
-
-
-    paused = false;
-
-    gameRunning = true;
-
-
-    document
-        .getElementById(
-            "gameOverOverlay"
-        )
-        .classList.add(
-            "hidden"
-        );
-
-
-    document
-        .getElementById(
-            "pauseOverlay"
-        )
-        .classList.add(
-            "hidden"
-        );
-
-
-    document.getElementById(
-        "pauseBtn"
-    ).textContent =
-        "PAUSE";
-
-
-    updateUI();
-
-    drawHold();
-
-    spawnPlayer();
-
-    drawBoard();
-
-
-    startTimer();
-
-    initAudio();
-
-}
-
-
-/* ================= GAME OVER ================= */
-
-function endGame() {
-
-    if (!gameRunning)
-        return;
-
-
-    gameRunning = false;
-
-    paused = false;
-
-
-    stopTimer();
-
-
-    saveBest();
-
-
-    document.getElementById(
-        "finalScore"
-    ).textContent =
-        score;
-
-
-    document.getElementById(
-        "finalLines"
-    ).textContent =
-        lines;
-
-
-    document.getElementById(
-        "finalLevel"
-    ).textContent =
-        level;
-
-
-    document.getElementById(
-        "finalHighScore"
-    ).textContent =
-        getBest(gameMode);
-
-
-    document
-        .getElementById(
-            "gameOverOverlay"
-        )
-        .classList.remove(
-            "hidden"
-        );
-
-
-    playSound(
-        100,
-        0.3,
-        "sawtooth"
-    );
-
-
-    updateMenu();
-
-}
-
-
-/* ================= AUDIO ================= */
-
-function initAudio() {
-
-    if (!soundEnabled)
-        return;
-
-
-    if (!audioContext) {
-
-        audioContext =
-            new (
-                window.AudioContext ||
-                window.webkitAudioContext
-            )();
-
-    }
-
-
-    if (
-        audioContext.state ===
-        "suspended"
-    ) {
-
-        audioContext.resume();
-
-    }
-
-}
-
-
-function playSound(
-    frequency,
-    duration,
-    type
-) {
-
-    if (!soundEnabled)
-        return;
-
-
-    try {
-
-        initAudio();
-
-
-        if (!audioContext)
-            return;
-
-
-        const oscillator =
-            audioContext
-                .createOscillator();
-
-
-        const gain =
-            audioContext
-                .createGain();
-
-
-        oscillator.type =
-            type;
-
-
-        oscillator.frequency.value =
-            frequency;
-
-
-        gain.gain.setValueAtTime(
-            0.08,
-            audioContext.currentTime
-        );
-
-
-        gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            audioContext.currentTime +
-            duration
-        );
-
-
-        oscillator.connect(gain);
-
-        gain.connect(
-            audioContext.destination
-        );
-
-
-        oscillator.start();
-
-        oscillator.stop(
-            audioContext.currentTime +
-            duration
-        );
-
-    } catch (error) {
-
-        console.log(
-            "Audio unavailable"
-        );
-
-    }
-
-}
-
-
-function toggleSound() {
-
-    soundEnabled =
-        !soundEnabled;
-
-
-    document.getElementById(
-        "soundBtn"
-    ).textContent =
-        soundEnabled
-            ? "🔊"
-            : "🔇";
-
-
-    if (soundEnabled) {
-
-        initAudio();
-
-    }
-
-}
-
-
-/* ================= RESTART ================= */
-
-function restartGame() {
-
-    startGame();
-
-}
-
-
-/* ================= CONTROLS ================= */
-
-document.getElementById(
-    "left"
-).onclick =
-    moveLeft;
-
-
-document.getElementById(
-    "right"
-).onclick =
-    moveRight;
-
-
-document.getElementById(
-    "rotate"
-).onclick =
-    rotatePlayer;
-
-
-document.getElementById(
-    "drop"
-).onclick =
-    hardDrop;
-
-
-document.getElementById(
-    "hold"
-).onclick =
-    holdCurrentPiece;
-
-
-document.getElementById(
-    "startBtn"
-).onclick =
-    startGame;
-
-
-document.getElementById(
-    "pauseBtn"
-).onclick =
-    togglePause;
-
-
-document.getElementById(
-    "restartBtn"
-).onclick =
-    restartGame;
-
-
-document.getElementById(
-    "soundBtn"
-).onclick =
-    toggleSound;
-
-
-/* ================= KEYBOARD ================= */
-
-document.addEventListener(
-    "keydown",
+/* =========================================================
+   TOUCH SWIPE
+========================================================= */
+
+let touchStartX = 0;
+let touchStartY = 0;
+
+canvas.addEventListener(
+    "touchstart",
     event => {
 
-        if (
-            event.key ===
-            "ArrowLeft"
-        ) {
+        const touch =
+            event.touches[0];
 
-            event.preventDefault();
+        touchStartX =
+            touch.clientX;
 
-            moveLeft();
+        touchStartY =
+            touch.clientY;
 
-        }
-
-
-        if (
-            event.key ===
-            "ArrowRight"
-        ) {
-
-            event.preventDefault();
-
-            moveRight();
-
-        }
-
-
-        if (
-            event.key ===
-            "ArrowDown"
-        ) {
-
-            event.preventDefault();
-
-            moveDown();
-
-        }
-
-
-        if (
-            event.key ===
-            "ArrowUp"
-        ) {
-
-            event.preventDefault();
-
-            rotatePlayer();
-
-        }
-
-
-        if (
-            event.code ===
-            "Space"
-        ) {
-
-            event.preventDefault();
-
-            hardDrop();
-
-        }
-
-
-        if (
-            event.key.toLowerCase()
-            === "c"
-        ) {
-
-            holdCurrentPiece();
-
-        }
-
-
-        if (
-            event.key.toLowerCase()
-            === "p"
-        ) {
-
-            togglePause();
-
-        }
-
-    }
+    },
+    { passive: true }
 );
 
+canvas.addEventListener(
+    "touchend",
+    event => {
 
-/* ================= LOOP ================= */
+        const touch =
+            event.changedTouches[0];
 
-function update(time = 0) {
+        const dx =
+            touch.clientX -
+            touchStartX;
 
-    if (
-        gameRunning &&
-        !paused
-    ) {
-
-        const delta =
-            time - lastTime;
-
-
-        lastTime =
-            time;
-
-
-        dropCounter +=
-            delta;
-
+        const dy =
+            touch.clientY -
+            touchStartY;
 
         if (
-            clearingRows.length
+            Math.abs(dx) >
+            Math.abs(dy)
         ) {
 
-            clearTimer -=
-                delta;
+            if (Math.abs(dx) > 25) {
 
-
-            if (
-                clearTimer <= 0
-            ) {
-
-                finishLineClear();
+                movePlayer(
+                    dx > 0 ? 1 : -1
+                );
 
             }
 
-        } else if (
-            dropCounter >
-            getDropSpeed()
-        ) {
+        }
+        else {
 
-            moveDown();
+            if (dy > 40) {
+
+                dropPlayer();
+
+            }
+            else if (dy < -40) {
+
+                rotatePlayer();
+
+            }
 
         }
 
-    }
-
-
-    drawBoard();
-
-
-    requestAnimationFrame(
-        update
-    );
-
-}
-
-
-/* ================= INIT ================= */
-
-updateMenu();
-
-board =
-    createBoard();
-
-drawBoard();
-
-requestAnimationFrame(
-    update
+    },
+    { passive: true }
 );
+
+
+/* =========================================================
+   INIT
+========================================================= */
+
+updateMenuScores();
+
+createBoard();
+
+requestAnimationFrame(update);
