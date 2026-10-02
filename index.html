@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>BLOCKDROP // Arcade</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
 </head>
 
 <body>
@@ -17,24 +27,33 @@
 
     <!-- ================= MENU ================= -->
 
-    <section id="menuScreen" class="screen active">
+    <section
+        id="menuScreen"
+        class="screen active"
+    >
 
         <div class="logo-area">
 
             <div class="logo-glow"></div>
 
-            <h1>BLOCK<span>DROP</span></h1>
+            <h1>
+                BLOCK<span>DROP</span>
+            </h1>
 
             <p class="tagline">
                 DROP. CLEAR. DOMINATE.
             </p>
 
             <div class="system-status">
+
                 <span class="status-dot"></span>
+
                 SYSTEM ONLINE
+
             </div>
 
         </div>
+
 
         <div class="menu-panel">
 
@@ -42,79 +61,167 @@
 
             <div class="mode-grid">
 
-                <button class="mode-btn selected" data-mode="classic">
+                <button
+                    class="mode-btn selected"
+                    data-mode="classic"
+                >
+
                     <strong>CLASSIC</strong>
-                    <small>Endless survival</small>
+
+                    <small>
+                        Endless survival
+                    </small>
+
                 </button>
 
-                <button class="mode-btn" data-mode="time">
+
+                <button
+                    class="mode-btn"
+                    data-mode="time"
+                >
+
                     <strong>TIME ATTACK</strong>
-                    <small>Race against time</small>
+
+                    <small>
+                        Race against time
+                    </small>
+
                 </button>
 
-                <button class="mode-btn" data-mode="endless">
+
+                <button
+                    class="mode-btn"
+                    data-mode="endless"
+                >
+
                     <strong>ENDLESS</strong>
-                    <small>Maximum difficulty</small>
+
+                    <small>
+                        Maximum difficulty
+                    </small>
+
                 </button>
 
             </div>
+
 
             <h2>DIFFICULTY</h2>
 
             <div class="difficulty-grid">
 
-                <button class="difficulty-btn selected"
-                        data-difficulty="normal">
+                <button
+                    class="difficulty-btn selected"
+                    data-difficulty="normal"
+                >
                     NORMAL
                 </button>
 
-                <button class="difficulty-btn"
-                        data-difficulty="hard">
+                <button
+                    class="difficulty-btn"
+                    data-difficulty="hard"
+                >
                     HARD
                 </button>
 
-                <button class="difficulty-btn"
-                        data-difficulty="insane">
+                <button
+                    class="difficulty-btn"
+                    data-difficulty="insane"
+                >
                     INSANE
                 </button>
 
             </div>
 
-            <button id="playBtn" class="primary-btn">
+
+            <button
+                id="playBtn"
+                class="primary-btn"
+            >
                 ▶ INITIALIZE GAME
             </button>
+
+
+            <!-- PLAYER PROFILE -->
+
+            <div class="player-profile">
+
+                <div class="profile-top">
+
+                    <span>PLAYER LEVEL</span>
+
+                    <strong id="playerLevel">
+                        1
+                    </strong>
+
+                </div>
+
+                <div class="xp-bar">
+
+                    <div
+                        id="xpFill"
+                        class="xp-fill"
+                    ></div>
+
+                </div>
+
+                <small id="xpText">
+                    0 / 100 XP
+                </small>
+
+            </div>
+
 
             <div class="best-scores">
 
                 <div>
+
                     <span>CLASSIC</span>
-                    <strong id="classicBest">0</strong>
+
+                    <strong id="classicBest">
+                        0
+                    </strong>
+
                 </div>
 
                 <div>
+
                     <span>TIME</span>
-                    <strong id="timeBest">0</strong>
+
+                    <strong id="timeBest">
+                        0
+                    </strong>
+
                 </div>
 
                 <div>
+
                     <span>ENDLESS</span>
-                    <strong id="endlessBest">0</strong>
+
+                    <strong id="endlessBest">
+                        0
+                    </strong>
+
                 </div>
 
             </div>
 
         </div>
 
+
         <footer>
-            BLOCKDROP // ARCADE PROTOCOL v6.0
+            BLOCKDROP // ARCADE PROTOCOL v7.0
         </footer>
 
     </section>
 
 
+
     <!-- ================= GAME ================= -->
 
-    <section id="gameScreen" class="screen">
+    <section
+        id="gameScreen"
+        class="screen"
+    >
 
         <header class="game-header">
 
@@ -122,13 +229,29 @@
                 BLOCK<span>DROP</span>
             </div>
 
+
+            <div class="header-center">
+
+                <span id="objectiveLabel">
+                    OBJECTIVE: CLEAR 5 LINES
+                </span>
+
+            </div>
+
+
             <div class="header-actions">
 
-                <button id="soundBtn">🔊</button>
+                <button id="soundBtn">
+                    🔊
+                </button>
 
-                <button id="pauseBtn">Ⅱ</button>
+                <button id="pauseBtn">
+                    Ⅱ
+                </button>
 
-                <button id="menuBtn">MENU</button>
+                <button id="menuBtn">
+                    MENU
+                </button>
 
             </div>
 
@@ -137,7 +260,8 @@
 
         <main class="game-layout">
 
-            <!-- LEFT PANEL -->
+
+            <!-- LEFT -->
 
             <aside class="side-panel left-panel">
 
@@ -145,97 +269,167 @@
 
                     <span>SCORE</span>
 
-                    <strong id="score">0</strong>
+                    <strong id="score">
+                        0
+                    </strong>
 
                 </div>
+
 
                 <div class="stat-card">
 
                     <span>BEST</span>
 
-                    <strong id="best">0</strong>
+                    <strong id="best">
+                        0
+                    </strong>
 
                 </div>
+
 
                 <div class="stat-card">
 
                     <span>LEVEL</span>
 
-                    <strong id="level">1</strong>
+                    <strong id="level">
+                        1
+                    </strong>
 
                 </div>
+
 
                 <div class="stat-card">
 
                     <span>LINES</span>
 
-                    <strong id="lines">0</strong>
+                    <strong id="lines">
+                        0
+                    </strong>
 
                 </div>
+
 
                 <div class="stat-card combo-card">
 
                     <span>COMBO</span>
 
-                    <strong id="combo">0</strong>
+                    <strong id="combo">
+                        0
+                    </strong>
 
                 </div>
+
+
+                <div class="stat-card multiplier-card">
+
+                    <span>MULTIPLIER</span>
+
+                    <strong id="multiplier">
+                        x1
+                    </strong>
+
+                </div>
+
 
                 <div class="stat-card">
 
                     <span>TIMER</span>
 
-                    <strong id="timer">∞</strong>
+                    <strong id="timer">
+                        ∞
+                    </strong>
 
                 </div>
 
             </aside>
 
 
+
             <!-- CENTER -->
 
             <section class="board-section">
 
-                <div id="levelFlash" class="level-flash">
+                <div
+                    id="levelFlash"
+                    class="level-flash"
+                >
                     LEVEL UP
                 </div>
 
-                <div id="comboFlash" class="combo-flash">
+
+                <div
+                    id="comboFlash"
+                    class="combo-flash"
+                >
                     COMBO
                 </div>
 
-                <div id="clearFlash" class="clear-flash"></div>
+
+                <div
+                    id="achievementFlash"
+                    class="achievement-flash"
+                >
+                    ACHIEVEMENT
+                </div>
+
+
+                <div
+                    id="scorePopup"
+                    class="score-popup"
+                >
+                    +100
+                </div>
+
+
+                <div
+                    id="clearFlash"
+                    class="clear-flash"
+                ></div>
+
 
                 <div class="board-frame">
 
                     <canvas
                         id="gameCanvas"
                         width="300"
-                        height="600">
-                    </canvas>
+                        height="600"
+                    ></canvas>
 
                 </div>
 
+
                 <div class="controls">
 
-                    <button id="leftBtn">◀</button>
+                    <button id="leftBtn">
+                        ◀
+                    </button>
 
-                    <button id="rotateBtn">↻</button>
+                    <button id="rotateBtn">
+                        ↻
+                    </button>
 
-                    <button id="downBtn">▼</button>
+                    <button id="downBtn">
+                        ▼
+                    </button>
 
-                    <button id="dropBtn">⏬</button>
+                    <button id="dropBtn">
+                        ⏬
+                    </button>
 
-                    <button id="rightBtn">▶</button>
+                    <button id="rightBtn">
+                        ▶
+                    </button>
 
                 </div>
 
             </section>
 
 
-            <!-- RIGHT PANEL -->
+
+            <!-- RIGHT -->
 
             <aside class="side-panel right-panel">
+
 
                 <div class="piece-panel">
 
@@ -246,8 +440,8 @@
                         <canvas
                             id="nextCanvas"
                             width="120"
-                            height="120">
-                        </canvas>
+                            height="120"
+                        ></canvas>
 
                     </div>
 
@@ -263,20 +457,48 @@
                         <canvas
                             id="holdCanvas"
                             width="120"
-                            height="120">
-                        </canvas>
+                            height="120"
+                        ></canvas>
 
                     </div>
 
                 </div>
 
+
                 <div class="system-panel">
 
                     <span>MODE</span>
-                    <strong id="modeLabel">CLASSIC</strong>
+
+                    <strong id="modeLabel">
+                        CLASSIC
+                    </strong>
+
 
                     <span>DIFFICULTY</span>
-                    <strong id="difficultyLabel">NORMAL</strong>
+
+                    <strong id="difficultyLabel">
+                        NORMAL
+                    </strong>
+
+                </div>
+
+
+                <div class="mission-panel">
+
+                    <span>MISSION</span>
+
+                    <strong id="missionText">
+                        CLEAR 5 LINES
+                    </strong>
+
+                    <div class="mission-progress">
+
+                        <div
+                            id="missionFill"
+                            class="mission-fill"
+                        ></div>
+
+                    </div>
 
                 </div>
 
@@ -288,27 +510,46 @@
         <div class="game-hints">
 
             <span>← → MOVE</span>
+
             <span>↑ ROTATE</span>
+
             <span>↓ SOFT DROP</span>
+
             <span>SPACE HARD DROP</span>
+
+            <span>C HOLD</span>
+
             <span>P PAUSE</span>
 
         </div>
 
 
+
         <!-- PAUSE -->
 
-        <div id="pauseOverlay" class="overlay">
+        <div
+            id="pauseOverlay"
+            class="overlay"
+        >
 
             <div class="overlay-box">
 
-                <div class="overlay-icon">Ⅱ</div>
+                <div class="overlay-icon">
+                    Ⅱ
+                </div>
 
-                <h2>GAME PAUSED</h2>
+                <h2>
+                    GAME PAUSED
+                </h2>
 
-                <p>PRESS P OR RESUME TO CONTINUE</p>
+                <p>
+                    PRESS P OR RESUME TO CONTINUE
+                </p>
 
-                <button id="resumeBtn" class="primary-btn">
+                <button
+                    id="resumeBtn"
+                    class="primary-btn"
+                >
                     RESUME
                 </button>
 
@@ -317,24 +558,34 @@
         </div>
 
 
+
         <!-- START -->
 
-        <div id="startOverlay" class="overlay">
+        <div
+            id="startOverlay"
+            class="overlay"
+        >
 
             <div class="countdown-box">
 
                 <span>READY</span>
 
-                <strong id="countdown">3</strong>
+                <strong id="countdown">
+                    3
+                </strong>
 
             </div>
 
         </div>
 
 
+
         <!-- GAME OVER -->
 
-        <div id="gameOverOverlay" class="overlay">
+        <div
+            id="gameOverOverlay"
+            class="overlay"
+        >
 
             <div class="overlay-box game-over-box">
 
@@ -342,34 +593,67 @@
                     SYSTEM TERMINATED
                 </div>
 
-                <h2>GAME OVER</h2>
+                <h2>
+                    GAME OVER
+                </h2>
+
 
                 <div class="result-grid">
 
                     <div>
+
                         <span>SCORE</span>
-                        <strong id="finalScore">0</strong>
+
+                        <strong id="finalScore">
+                            0
+                        </strong>
+
                     </div>
 
+
                     <div>
+
                         <span>LINES</span>
-                        <strong id="finalLines">0</strong>
+
+                        <strong id="finalLines">
+                            0
+                        </strong>
+
                     </div>
 
+
                     <div>
+
                         <span>LEVEL</span>
-                        <strong id="finalLevel">1</strong>
+
+                        <strong id="finalLevel">
+                            1
+                        </strong>
+
                     </div>
 
                 </div>
 
+
+                <div
+                    id="gameOverAchievement"
+                    class="game-over-achievement"
+                ></div>
+
+
                 <div class="overlay-buttons">
 
-                    <button id="restartBtn" class="primary-btn">
+                    <button
+                        id="restartBtn"
+                        class="primary-btn"
+                    >
                         ↻ RESTART
                     </button>
 
-                    <button id="backMenuBtn" class="secondary-btn">
+                    <button
+                        id="backMenuBtn"
+                        class="secondary-btn"
+                    >
                         MAIN MENU
                     </button>
 
@@ -383,7 +667,9 @@
 
 </div>
 
+
 <script src="game.js"></script>
 
 </body>
+
 </html>

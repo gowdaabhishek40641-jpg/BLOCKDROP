@@ -5,22 +5,40 @@
 }
 
 :root {
+
     --bg: #050507;
-    --panel: rgba(15, 15, 20, 0.88);
-    --border: rgba(255, 255, 255, 0.08);
+
+    --panel: rgba(15,15,20,.9);
+
+    --border: rgba(255,255,255,.08);
+
     --red: #ff1744;
+
     --red-light: #ff4d6d;
+
+    --green: #00ff88;
+
     --white: #ffffff;
-    --muted: #85858f;
+
+    --muted: #777780;
+
 }
 
 body {
+
     min-height: 100vh;
+
     background:
-        radial-gradient(circle at 50% 20%, rgba(255, 23, 68, 0.12), transparent 30%),
+
+        radial-gradient(
+            circle at 50% 15%,
+            rgba(255,23,68,.13),
+            transparent 32%
+        ),
+
         #050507;
 
-    color: var(--white);
+    color: white;
 
     font-family:
         Inter,
@@ -29,28 +47,45 @@ body {
         sans-serif;
 
     overflow-x: hidden;
+
 }
 
 button {
+
     font-family: inherit;
+
     cursor: pointer;
+
 }
 
 #backgroundFX {
+
     position: fixed;
+
     inset: 0;
 
     pointer-events: none;
 
     background-image:
-        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+
+        linear-gradient(
+            rgba(255,255,255,.025) 1px,
+            transparent 1px
+        ),
+
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.025) 1px,
+            transparent 1px
+        );
 
     background-size: 50px 50px;
 
-    animation: gridMove 12s linear infinite;
+    animation:
+        gridMove 12s linear infinite;
 
     z-index: -1;
+
 }
 
 @keyframes gridMove {
@@ -66,86 +101,103 @@ button {
 }
 
 
-/* ================= APP ================= */
-
-.app {
-    min-height: 100vh;
-}
-
-
-/* ================= SCREENS ================= */
+/* ================= MENU ================= */
 
 .screen {
+
     min-height: 100vh;
+
     display: none;
+
 }
 
 .screen.active {
+
     display: block;
+
 }
 
-
-/* ================= MENU ================= */
-
 #menuScreen {
+
     min-height: 100vh;
 
     display: none;
 
     flex-direction: column;
+
     align-items: center;
+
     justify-content: center;
 
     padding: 30px 20px;
 
-    position: relative;
 }
 
 #menuScreen.active {
+
     display: flex;
+
 }
 
 .logo-area {
+
     text-align: center;
-    margin-bottom: 35px;
+
+    margin-bottom: 30px;
+
 }
 
 .logo-area h1 {
-    font-size: clamp(3.5rem, 9vw, 7rem);
+
+    font-size:
+        clamp(3.5rem,9vw,7rem);
+
     letter-spacing: -5px;
+
     font-weight: 900;
 
     text-shadow:
-        0 0 20px rgba(255, 23, 68, 0.35),
-        0 0 60px rgba(255, 23, 68, 0.15);
+        0 0 20px rgba(255,23,68,.35),
+        0 0 60px rgba(255,23,68,.15);
+
 }
 
 .logo-area h1 span {
+
     color: var(--red);
+
 }
 
 .tagline {
+
     margin-top: 5px;
 
-    font-size: 0.8rem;
+    font-size: .8rem;
+
     letter-spacing: 6px;
 
     color: var(--muted);
+
 }
 
 .system-status {
-    margin-top: 20px;
 
-    font-size: 0.7rem;
+    margin-top: 18px;
+
+    font-size: .7rem;
+
     letter-spacing: 3px;
 
     color: #aaa;
+
 }
 
 .status-dot {
+
     display: inline-block;
 
     width: 7px;
+
     height: 7px;
 
     margin-right: 7px;
@@ -157,13 +209,15 @@ button {
     box-shadow:
         0 0 10px #00ff88;
 
-    animation: blink 1.2s infinite;
+    animation:
+        blink 1.2s infinite;
+
 }
 
 @keyframes blink {
 
     50% {
-        opacity: 0.3;
+        opacity: .3;
     }
 
 }
@@ -172,15 +226,16 @@ button {
 /* ================= MENU PANEL ================= */
 
 .menu-panel {
-    width: min(600px, 95vw);
+
+    width: min(620px,95vw);
 
     padding: 28px;
 
     background:
         linear-gradient(
             145deg,
-            rgba(25,25,32,0.96),
-            rgba(8,8,12,0.96)
+            rgba(25,25,32,.97),
+            rgba(8,8,12,.97)
         );
 
     border: 1px solid var(--border);
@@ -188,109 +243,127 @@ button {
     border-radius: 18px;
 
     box-shadow:
-        0 30px 80px rgba(0,0,0,0.6),
-        inset 0 1px rgba(255,255,255,0.04);
+        0 30px 80px rgba(0,0,0,.6);
+
 }
 
 .menu-panel h2 {
+
     margin-bottom: 12px;
 
-    font-size: 0.7rem;
+    font-size: .7rem;
+
     letter-spacing: 3px;
 
     color: #888;
+
 }
 
 .mode-grid {
+
     display: grid;
 
     grid-template-columns:
-        repeat(3, 1fr);
+        repeat(3,1fr);
 
     gap: 10px;
 
     margin-bottom: 25px;
+
 }
 
 .mode-btn,
 .difficulty-btn {
+
     border: 1px solid var(--border);
 
-    background: rgba(255,255,255,0.025);
+    background:
+        rgba(255,255,255,.025);
 
     color: white;
 
     border-radius: 10px;
 
-    transition:
-        0.2s ease;
+    transition: .2s;
 
     padding: 15px 10px;
+
 }
 
 .mode-btn strong {
+
     display: block;
 
-    font-size: 0.75rem;
+    font-size: .75rem;
 
-    letter-spacing: 1px;
 }
 
 .mode-btn small {
+
     display: block;
 
     margin-top: 5px;
 
     color: #777;
 
-    font-size: 0.65rem;
+    font-size: .65rem;
+
 }
 
 .mode-btn:hover,
 .difficulty-btn:hover {
-    border-color: rgba(255,23,68,0.5);
 
-    transform: translateY(-2px);
+    border-color:
+        rgba(255,23,68,.5);
+
+    transform:
+        translateY(-2px);
+
 }
 
 .mode-btn.selected,
 .difficulty-btn.selected {
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,23,68,0.22),
-            rgba(255,23,68,0.05)
-        );
 
-    border-color: var(--red);
+    background:
+        rgba(255,23,68,.12);
+
+    border-color:
+        var(--red);
 
     box-shadow:
-        0 0 20px rgba(255,23,68,0.12);
+        0 0 20px
+        rgba(255,23,68,.12);
+
 }
 
 .difficulty-grid {
+
     display: grid;
 
     grid-template-columns:
-        repeat(3, 1fr);
+        repeat(3,1fr);
 
     gap: 10px;
 
     margin-bottom: 25px;
+
 }
 
 .difficulty-btn {
+
     padding: 12px;
 
-    font-size: 0.7rem;
+    font-size: .7rem;
 
     letter-spacing: 1px;
+
 }
 
 
 /* ================= BUTTONS ================= */
 
 .primary-btn {
+
     width: 100%;
 
     border: none;
@@ -313,19 +386,22 @@ button {
     letter-spacing: 1px;
 
     box-shadow:
-        0 10px 30px rgba(255,23,68,0.22);
+        0 10px 30px
+        rgba(255,23,68,.22);
 
-    transition: 0.2s;
+    transition: .2s;
+
 }
 
 .primary-btn:hover {
-    transform: translateY(-2px);
 
-    box-shadow:
-        0 15px 35px rgba(255,23,68,0.35);
+    transform:
+        translateY(-2px);
+
 }
 
 .secondary-btn {
+
     width: 100%;
 
     padding: 14px;
@@ -334,71 +410,171 @@ button {
 
     border: 1px solid var(--border);
 
-    background: rgba(255,255,255,0.04);
+    background:
+        rgba(255,255,255,.04);
 
     color: white;
+
+}
+
+
+/* ================= PLAYER PROFILE ================= */
+
+.player-profile {
+
+    margin-top: 20px;
+
+    padding-top: 20px;
+
+    border-top:
+        1px solid var(--border);
+
+}
+
+.profile-top {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 8px;
+
+}
+
+.profile-top span {
+
+    color: #777;
+
+    font-size: .6rem;
+
+    letter-spacing: 2px;
+
+}
+
+.profile-top strong {
+
+    color: var(--red);
+
+    font-size: 1.2rem;
+
+}
+
+.xp-bar {
+
+    width: 100%;
+
+    height: 5px;
+
+    background: #18181e;
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+}
+
+.xp-fill {
+
+    height: 100%;
+
+    width: 0%;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--red),
+            #ff7a95
+        );
+
+    transition:
+        width .4s ease;
+
+}
+
+.player-profile small {
+
+    display: block;
+
+    margin-top: 6px;
+
+    color: #555;
+
+    font-size: .55rem;
+
 }
 
 
 /* ================= SCORES ================= */
 
 .best-scores {
+
     display: grid;
 
     grid-template-columns:
-        repeat(3, 1fr);
+        repeat(3,1fr);
 
     margin-top: 20px;
 
     padding-top: 20px;
 
-    border-top: 1px solid var(--border);
+    border-top:
+        1px solid var(--border);
+
 }
 
 .best-scores div {
+
     text-align: center;
+
 }
 
 .best-scores span {
+
     display: block;
 
     color: #666;
 
-    font-size: 0.6rem;
+    font-size: .6rem;
 
-    letter-spacing: 1px;
 }
 
 .best-scores strong {
+
     display: block;
 
     margin-top: 4px;
 
-    color: #ddd;
 }
 
 #menuScreen footer {
+
     margin-top: 25px;
 
-    font-size: 0.55rem;
+    color: #555;
+
+    font-size: .55rem;
 
     letter-spacing: 3px;
 
-    color: #555;
 }
 
 
 /* ================= GAME ================= */
 
 #gameScreen {
+
     position: relative;
 
     padding: 18px;
 
     overflow: hidden;
+
 }
 
 .game-header {
+
     max-width: 1100px;
 
     margin: auto;
@@ -410,46 +586,62 @@ button {
     justify-content: space-between;
 
     margin-bottom: 15px;
+
 }
 
 .brand {
+
     font-size: 1.3rem;
 
     font-weight: 900;
 
-    letter-spacing: -1px;
 }
 
 .brand span {
+
     color: var(--red);
+
+}
+
+.header-center {
+
+    color: #666;
+
+    font-size: .6rem;
+
+    letter-spacing: 2px;
+
 }
 
 .header-actions {
+
     display: flex;
 
     gap: 7px;
+
 }
 
 .header-actions button {
-    border: 1px solid var(--border);
 
-    background: rgba(255,255,255,0.04);
+    border:
+        1px solid var(--border);
+
+    background:
+        rgba(255,255,255,.04);
 
     color: white;
 
     padding: 8px 12px;
 
     border-radius: 7px;
-}
 
-.header-actions button:hover {
-    border-color: var(--red);
 }
 
 
-/* ================= GAME LAYOUT ================= */
+/* ================= LAYOUT ================= */
 
 .game-layout {
+
     max-width: 1100px;
 
     margin: auto;
@@ -464,112 +656,81 @@ button {
     gap: 30px;
 
     align-items: start;
+
 }
 
-
-/* ================= SIDE PANELS ================= */
-
 .side-panel {
+
     display: flex;
 
     flex-direction: column;
 
     gap: 10px;
+
 }
 
 .stat-card,
 .piece-panel,
-.system-panel {
+.system-panel,
+.mission-panel {
+
     background:
         linear-gradient(
             145deg,
-            rgba(20,20,27,0.9),
-            rgba(10,10,14,0.9)
+            rgba(20,20,27,.92),
+            rgba(10,10,14,.92)
         );
 
-    border: 1px solid var(--border);
+    border:
+        1px solid var(--border);
 
     border-radius: 10px;
 
     padding: 14px;
+
 }
 
 .stat-card span,
-.system-panel span {
+.system-panel span,
+.mission-panel span {
+
     display: block;
 
     color: #666;
 
-    font-size: 0.55rem;
+    font-size: .55rem;
 
     letter-spacing: 2px;
+
 }
 
 .stat-card strong {
+
     display: block;
 
     margin-top: 4px;
 
-    font-size: 1.25rem;
+    font-size: 1.2rem;
 
-    color: #eee;
 }
 
 .combo-card strong {
+
     color: var(--red);
+
 }
 
-.piece-panel h3 {
-    margin-bottom: 10px;
+.multiplier-card strong {
 
-    color: #777;
+    color: #ffcc00;
 
-    font-size: 0.6rem;
-
-    letter-spacing: 3px;
-}
-
-.piece-frame {
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    min-height: 120px;
-
-    background:
-        repeating-linear-gradient(
-            45deg,
-            rgba(255,255,255,0.02),
-            rgba(255,255,255,0.02) 5px,
-            transparent 5px,
-            transparent 10px
-        );
-
-    border-radius: 6px;
-}
-
-.system-panel {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 5px;
-}
-
-.system-panel strong {
-    font-size: 0.75rem;
-
-    margin-bottom: 8px;
-
-    color: #ddd;
 }
 
 
 /* ================= BOARD ================= */
 
 .board-section {
+
     position: relative;
 
     display: flex;
@@ -577,9 +738,11 @@ button {
     flex-direction: column;
 
     align-items: center;
+
 }
 
 .board-frame {
+
     padding: 7px;
 
     background:
@@ -589,81 +752,141 @@ button {
             #08080b
         );
 
-    border: 1px solid rgba(255,255,255,0.1);
+    border:
+        1px solid rgba(255,255,255,.1);
 
     border-radius: 12px;
 
     box-shadow:
-        0 25px 70px rgba(0,0,0,0.7),
-        0 0 40px rgba(255,23,68,0.05);
+        0 25px 70px rgba(0,0,0,.7);
+
 }
 
 #gameCanvas {
+
     display: block;
 
     width: 300px;
+
     height: 600px;
 
     background: #050508;
 
     border-radius: 6px;
+
 }
 
 
 /* ================= EFFECTS ================= */
 
 .level-flash,
-.combo-flash {
-    position: absolute;
+.combo-flash,
+.achievement-flash,
+.score-popup {
 
-    top: 40%;
+    position: absolute;
 
     left: 50%;
 
-    transform: translate(-50%, -50%) scale(0.6);
+    transform:
+        translate(-50%,-50%);
 
     pointer-events: none;
 
     opacity: 0;
 
-    z-index: 10;
+    z-index: 20;
 
     font-weight: 900;
 
+}
+
+.level-flash {
+
+    top: 40%;
+
+    font-size: 2rem;
+
     letter-spacing: 4px;
+
+    text-shadow:
+        0 0 20px var(--red);
+
+}
+
+.combo-flash {
+
+    top: 48%;
+
+    color: #ffcc00;
+
+}
+
+.achievement-flash {
+
+    top: 30%;
+
+    color: var(--green);
+
+    font-size: .8rem;
+
+    letter-spacing: 3px;
+
+}
+
+.score-popup {
+
+    top: 55%;
 
     color: white;
 
-    text-shadow:
-        0 0 15px var(--red),
-        0 0 40px var(--red);
+    font-size: 1.4rem;
+
 }
 
-.level-flash.show,
-.combo-flash.show {
-    animation: flashText 0.9s ease forwards;
+.show {
+
+    animation:
+        effectPopup .9s ease forwards;
+
 }
 
-@keyframes flashText {
+@keyframes effectPopup {
 
     0% {
+
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
+
+        transform:
+            translate(-50%,-50%)
+            scale(.5);
+
     }
 
-    30% {
+    25% {
+
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1.2);
+
+        transform:
+            translate(-50%,-50%)
+            scale(1.15);
+
     }
 
     100% {
+
         opacity: 0;
-        transform: translate(-50%, -50%) scale(1.4);
+
+        transform:
+            translate(-50%,-80%)
+            scale(1.1);
+
     }
 
 }
 
 .clear-flash {
+
     position: absolute;
 
     inset: 0;
@@ -676,11 +899,13 @@ button {
 
     z-index: 8;
 
-    border-radius: 10px;
 }
 
 .clear-flash.show {
-    animation: clearFlash 0.3s ease;
+
+    animation:
+        clearFlash .3s ease;
+
 }
 
 @keyframes clearFlash {
@@ -690,7 +915,7 @@ button {
     }
 
     30% {
-        opacity: 0.35;
+        opacity: .35;
     }
 
     100% {
@@ -700,46 +925,134 @@ button {
 }
 
 
+/* ================= MISSION ================= */
+
+.mission-panel strong {
+
+    display: block;
+
+    margin-top: 7px;
+
+    color: white;
+
+    font-size: .7rem;
+
+}
+
+.mission-progress {
+
+    height: 5px;
+
+    margin-top: 10px;
+
+    background: #19191f;
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+}
+
+.mission-fill {
+
+    width: 0%;
+
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--red),
+            #ff8299
+        );
+
+    transition:
+        width .3s ease;
+
+}
+
+
+/* ================= PIECES ================= */
+
+.piece-panel h3 {
+
+    margin-bottom: 10px;
+
+    color: #777;
+
+    font-size: .6rem;
+
+    letter-spacing: 3px;
+
+}
+
+.piece-frame {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    min-height: 120px;
+
+    background:
+        rgba(255,255,255,.02);
+
+    border-radius: 6px;
+
+}
+
+
 /* ================= CONTROLS ================= */
 
 .controls {
+
     display: grid;
 
     grid-template-columns:
-        repeat(5, 1fr);
+        repeat(5,1fr);
 
     gap: 7px;
 
     width: 300px;
 
     margin-top: 12px;
+
 }
 
 .controls button {
+
     height: 42px;
 
-    border: 1px solid var(--border);
+    border:
+        1px solid var(--border);
 
-    background: rgba(255,255,255,0.05);
+    background:
+        rgba(255,255,255,.05);
 
     color: white;
 
     border-radius: 7px;
 
-    font-size: 1rem;
 }
 
 .controls button:active {
-    background: var(--red);
 
-    transform: scale(0.94);
+    background:
+        var(--red);
+
+    transform:
+        scale(.94);
+
 }
 
 
 /* ================= HINTS ================= */
 
 .game-hints {
-    max-width: 800px;
+
+    max-width: 900px;
 
     margin: 15px auto 0;
 
@@ -747,19 +1060,21 @@ button {
 
     justify-content: center;
 
-    gap: 20px;
+    gap: 18px;
 
     color: #555;
 
-    font-size: 0.55rem;
+    font-size: .52rem;
 
     letter-spacing: 1px;
+
 }
 
 
-/* ================= OVERLAYS ================= */
+/* ================= OVERLAY ================= */
 
 .overlay {
+
     position: fixed;
 
     inset: 0;
@@ -770,19 +1085,26 @@ button {
 
     justify-content: center;
 
-    background: rgba(0,0,0,0.75);
+    background:
+        rgba(0,0,0,.75);
 
-    backdrop-filter: blur(8px);
+    backdrop-filter:
+        blur(8px);
 
     z-index: 100;
+
 }
 
 .overlay.active {
+
     display: flex;
+
 }
 
 .overlay-box {
-    width: min(420px, 90vw);
+
+    width:
+        min(420px,90vw);
 
     padding: 35px;
 
@@ -795,53 +1117,63 @@ button {
             #08080b
         );
 
-    border: 1px solid var(--border);
+    border:
+        1px solid var(--border);
 
     border-radius: 16px;
 
     box-shadow:
-        0 30px 100px rgba(0,0,0,0.8);
+        0 30px 100px
+        rgba(0,0,0,.8);
+
 }
 
 .overlay-icon {
+
     font-size: 3rem;
 
     color: var(--red);
 
-    margin-bottom: 10px;
 }
 
 .overlay-box h2 {
+
     font-size: 2rem;
 
     letter-spacing: 3px;
+
 }
 
 .overlay-box p {
+
     margin: 10px 0 25px;
 
     color: #777;
 
-    font-size: 0.65rem;
+    font-size: .65rem;
 
     letter-spacing: 2px;
+
 }
 
 .countdown-box {
+
     text-align: center;
+
 }
 
 .countdown-box span {
+
     display: block;
 
     color: #777;
 
     letter-spacing: 5px;
 
-    font-size: 0.8rem;
 }
 
 .countdown-box strong {
+
     display: block;
 
     margin-top: 10px;
@@ -850,149 +1182,178 @@ button {
 
     color: var(--red);
 
-    text-shadow:
-        0 0 30px rgba(255,23,68,0.5);
 }
 
 .danger-label {
+
     color: var(--red);
 
-    font-size: 0.6rem;
+    font-size: .6rem;
 
     letter-spacing: 4px;
 
     margin-bottom: 8px;
+
 }
 
 .result-grid {
+
     display: grid;
 
     grid-template-columns:
-        repeat(3, 1fr);
+        repeat(3,1fr);
 
     gap: 10px;
 
     margin: 25px 0;
+
 }
 
 .result-grid div {
+
     padding: 12px;
 
-    background: rgba(255,255,255,0.03);
+    background:
+        rgba(255,255,255,.03);
 
     border-radius: 8px;
+
 }
 
 .result-grid span {
+
     display: block;
 
     color: #666;
 
-    font-size: 0.55rem;
+    font-size: .55rem;
+
 }
 
 .result-grid strong {
+
     display: block;
 
     margin-top: 4px;
 
-    color: white;
+}
+
+.game-over-achievement {
+
+    min-height: 22px;
+
+    margin-bottom: 15px;
+
+    color: var(--green);
+
+    font-size: .65rem;
+
+    letter-spacing: 2px;
+
 }
 
 .overlay-buttons {
+
     display: grid;
 
     gap: 10px;
+
 }
 
 
 /* ================= RESPONSIVE ================= */
 
-@media (max-width: 850px) {
+@media(max-width:850px) {
 
     .game-layout {
-        grid-template-columns: 300px;
+
+        grid-template-columns:
+            300px;
+
     }
 
     .left-panel {
+
         order: 2;
 
         display: grid;
 
         grid-template-columns:
-            repeat(3, 1fr);
+            repeat(4,1fr);
+
     }
 
     .right-panel {
+
         order: 3;
 
         display: grid;
 
         grid-template-columns:
-            repeat(2, 1fr);
+            repeat(2,1fr);
+
     }
 
     .board-section {
+
         order: 1;
+
     }
 
     .game-hints {
+
         display: none;
+
     }
+
 }
 
-
-@media (max-width: 500px) {
+@media(max-width:500px) {
 
     #gameScreen {
+
         padding: 10px;
+
     }
 
-    .game-header {
-        margin-bottom: 8px;
-    }
+    .header-center {
 
-    .brand {
-        font-size: 1rem;
+        display: none;
+
     }
 
     .game-layout {
-        transform-origin: top center;
+
+        grid-template-columns:
+            270px;
+
     }
 
     #gameCanvas {
+
         width: 270px;
+
         height: 540px;
+
     }
 
     .controls {
+
         width: 270px;
-    }
 
-    .left-panel {
-        grid-template-columns:
-            repeat(3, 1fr);
-    }
-
-    .stat-card {
-        padding: 9px;
-    }
-
-    .stat-card strong {
-        font-size: 1rem;
-    }
-
-    .logo-area h1 {
-        letter-spacing: -3px;
     }
 
     .mode-grid {
-        grid-template-columns: 1fr;
+
+        grid-template-columns:
+            1fr;
+
     }
 
-    .difficulty-grid {
-        grid-template-columns:
-            repeat(3, 1fr);
+    .logo-area h1 {
+
+        letter-spacing: -3px;
+
     }
 
 }

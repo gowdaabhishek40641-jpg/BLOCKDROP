@@ -1,11 +1,20 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const canvas =
+    document.getElementById("gameCanvas");
 
-const nextCanvas = document.getElementById("nextCanvas");
-const nextCtx = nextCanvas.getContext("2d");
+const ctx =
+    canvas.getContext("2d");
 
-const holdCanvas = document.getElementById("holdCanvas");
-const holdCtx = holdCanvas.getContext("2d");
+const nextCanvas =
+    document.getElementById("nextCanvas");
+
+const nextCtx =
+    nextCanvas.getContext("2d");
+
+const holdCanvas =
+    document.getElementById("holdCanvas");
+
+const holdCtx =
+    holdCanvas.getContext("2d");
 
 
 /* =========================================================
@@ -13,7 +22,9 @@ const holdCtx = holdCanvas.getContext("2d");
 ========================================================= */
 
 const COLS = 10;
+
 const ROWS = 20;
+
 const BLOCK = 30;
 
 let board = [];
@@ -21,25 +32,35 @@ let board = [];
 let player = null;
 
 let nextPiece = null;
+
 let holdPiece = null;
 
 let canHold = true;
 
 let score = 0;
+
 let bestScore = 0;
+
 let level = 1;
+
 let lines = 0;
+
 let combo = 0;
 
+let multiplier = 1;
+
 let gameMode = "classic";
+
 let difficulty = "normal";
 
 let running = false;
+
 let paused = false;
 
 let soundEnabled = true;
 
 let dropCounter = 0;
+
 let lastTime = 0;
 
 let dropInterval = 800;
@@ -51,7 +72,43 @@ let shakeAmount = 0;
 let particles = [];
 
 let clearingRows = [];
+
 let clearTimer = 0;
+
+
+/* =========================================================
+   PLAYER PROFILE
+========================================================= */
+
+let playerXP =
+    Number(
+        localStorage.getItem(
+            "blockdrop_xp"
+        ) || 0
+    );
+
+let playerLevel =
+    Number(
+        localStorage.getItem(
+            "blockdrop_player_level"
+        ) || 1
+    );
+
+let achievements =
+    JSON.parse(
+        localStorage.getItem(
+            "blockdrop_achievements"
+        ) || "[]"
+    );
+
+
+/* =========================================================
+   MISSION
+========================================================= */
+
+let missionTarget = 5;
+
+let missionStartLines = 0;
 
 
 /* =========================================================
@@ -62,63 +119,77 @@ const PIECES = [
 
     {
         name: "I",
+
         matrix: [
             [1,1,1,1]
         ],
+
         color: "#00e5ff"
     },
 
     {
         name: "O",
+
         matrix: [
             [1,1],
             [1,1]
         ],
+
         color: "#ffe600"
     },
 
     {
         name: "T",
+
         matrix: [
             [0,1,0],
             [1,1,1]
         ],
+
         color: "#b000ff"
     },
 
     {
         name: "S",
+
         matrix: [
             [0,1,1],
             [1,1,0]
         ],
+
         color: "#00ff88"
     },
 
     {
         name: "Z",
+
         matrix: [
             [1,1,0],
             [0,1,1]
         ],
+
         color: "#ff1744"
     },
 
     {
         name: "J",
+
         matrix: [
             [1,0,0],
             [1,1,1]
         ],
+
         color: "#2979ff"
     },
 
     {
         name: "L",
+
         matrix: [
             [0,0,1],
             [1,1,1]
         ],
+
         color: "#ff8a00"
     }
 
@@ -130,55 +201,124 @@ const PIECES = [
 ========================================================= */
 
 const menuScreen =
-    document.getElementById("menuScreen");
+    document.getElementById(
+        "menuScreen"
+    );
 
 const gameScreen =
-    document.getElementById("gameScreen");
+    document.getElementById(
+        "gameScreen"
+    );
 
 const pauseOverlay =
-    document.getElementById("pauseOverlay");
+    document.getElementById(
+        "pauseOverlay"
+    );
 
 const startOverlay =
-    document.getElementById("startOverlay");
+    document.getElementById(
+        "startOverlay"
+    );
 
 const gameOverOverlay =
-    document.getElementById("gameOverOverlay");
+    document.getElementById(
+        "gameOverOverlay"
+    );
 
 const countdown =
-    document.getElementById("countdown");
+    document.getElementById(
+        "countdown"
+    );
 
 const scoreEl =
-    document.getElementById("score");
+    document.getElementById(
+        "score"
+    );
 
 const bestEl =
-    document.getElementById("best");
+    document.getElementById(
+        "best"
+    );
 
 const levelEl =
-    document.getElementById("level");
+    document.getElementById(
+        "level"
+    );
 
 const linesEl =
-    document.getElementById("lines");
+    document.getElementById(
+        "lines"
+    );
 
 const comboEl =
-    document.getElementById("combo");
+    document.getElementById(
+        "combo"
+    );
+
+const multiplierEl =
+    document.getElementById(
+        "multiplier"
+    );
 
 const timerEl =
-    document.getElementById("timer");
+    document.getElementById(
+        "timer"
+    );
 
-const modeLabel =
-    document.getElementById("modeLabel");
+const playerLevelEl =
+    document.getElementById(
+        "playerLevel"
+    );
 
-const difficultyLabel =
-    document.getElementById("difficultyLabel");
+const xpFill =
+    document.getElementById(
+        "xpFill"
+    );
+
+const xpText =
+    document.getElementById(
+        "xpText"
+    );
+
+const missionText =
+    document.getElementById(
+        "missionText"
+    );
+
+const missionFill =
+    document.getElementById(
+        "missionFill"
+    );
+
+const objectiveLabel =
+    document.getElementById(
+        "objectiveLabel"
+    );
 
 const levelFlash =
-    document.getElementById("levelFlash");
+    document.getElementById(
+        "levelFlash"
+    );
 
 const comboFlash =
-    document.getElementById("comboFlash");
+    document.getElementById(
+        "comboFlash"
+    );
+
+const achievementFlash =
+    document.getElementById(
+        "achievementFlash"
+    );
+
+const scorePopup =
+    document.getElementById(
+        "scorePopup"
+    );
 
 const clearFlash =
-    document.getElementById("clearFlash");
+    document.getElementById(
+        "clearFlash"
+    );
 
 
 /* =========================================================
@@ -195,7 +335,7 @@ function getBest(mode) {
 
 }
 
-function saveBest(mode, value) {
+function saveBest(mode,value) {
 
     localStorage.setItem(
         `blockdrop_best_${mode}`,
@@ -206,14 +346,138 @@ function saveBest(mode, value) {
 
 function updateMenuScores() {
 
-    document.getElementById("classicBest").textContent =
+    document.getElementById(
+        "classicBest"
+    ).textContent =
         getBest("classic");
 
-    document.getElementById("timeBest").textContent =
+    document.getElementById(
+        "timeBest"
+    ).textContent =
         getBest("time");
 
-    document.getElementById("endlessBest").textContent =
+    document.getElementById(
+        "endlessBest"
+    ).textContent =
         getBest("endless");
+
+}
+
+
+/* =========================================================
+   PROFILE
+========================================================= */
+
+function updateProfileUI() {
+
+    const requiredXP =
+        playerLevel * 100;
+
+    const percent =
+        Math.min(
+            100,
+            (playerXP / requiredXP) * 100
+        );
+
+    playerLevelEl.textContent =
+        playerLevel;
+
+    xpFill.style.width =
+        `${percent}%`;
+
+    xpText.textContent =
+        `${playerXP} / ${requiredXP} XP`;
+
+}
+
+function addXP(amount) {
+
+    playerXP += amount;
+
+    let requiredXP =
+        playerLevel * 100;
+
+    while (
+        playerXP >= requiredXP
+    ) {
+
+        playerXP -= requiredXP;
+
+        playerLevel++;
+
+        requiredXP =
+            playerLevel * 100;
+
+        showAchievement(
+            `PLAYER LEVEL ${playerLevel}`
+        );
+
+        playTone(
+            700,
+            .2
+        );
+
+    }
+
+    localStorage.setItem(
+        "blockdrop_xp",
+        playerXP
+    );
+
+    localStorage.setItem(
+        "blockdrop_player_level",
+        playerLevel
+    );
+
+    updateProfileUI();
+
+}
+
+
+/* =========================================================
+   ACHIEVEMENTS
+========================================================= */
+
+function unlockAchievement(
+    id,
+    title
+) {
+
+    if (
+        achievements.includes(id)
+    ) {
+
+        return;
+
+    }
+
+    achievements.push(id);
+
+    localStorage.setItem(
+        "blockdrop_achievements",
+        JSON.stringify(
+            achievements
+        )
+    );
+
+    showAchievement(title);
+
+}
+
+function showAchievement(title) {
+
+    achievementFlash.textContent =
+        `★ ${title}`;
+
+    achievementFlash.classList.remove(
+        "show"
+    );
+
+    void achievementFlash.offsetWidth;
+
+    achievementFlash.classList.add(
+        "show"
+    );
 
 }
 
@@ -224,10 +488,15 @@ function updateMenuScores() {
 
 function createBoard() {
 
-    board = Array.from(
-        { length: ROWS },
-        () => Array(COLS).fill(0)
-    );
+    board =
+        Array.from(
+            {
+                length: ROWS
+            },
+
+            () =>
+                Array(COLS).fill(0)
+        );
 
 }
 
@@ -241,7 +510,8 @@ function randomPiece() {
     const source =
         PIECES[
             Math.floor(
-                Math.random() * PIECES.length
+                Math.random() *
+                PIECES.length
             )
         ];
 
@@ -249,7 +519,10 @@ function randomPiece() {
 
         name: source.name,
 
-        matrix: source.matrix.map(row => [...row]),
+        matrix:
+            source.matrix.map(
+                row => [...row]
+            ),
 
         color: source.color
 
@@ -264,13 +537,19 @@ function randomPiece() {
 
 function spawnPlayer() {
 
-    player = nextPiece || randomPiece();
+    player =
+        nextPiece ||
+        randomPiece();
 
-    nextPiece = randomPiece();
+    nextPiece =
+        randomPiece();
 
     player.x =
         Math.floor(
-            (COLS - player.matrix[0].length) / 2
+            (
+                COLS -
+                player.matrix[0].length
+            ) / 2
         );
 
     player.y = 0;
@@ -306,8 +585,9 @@ function collision() {
             x++
         ) {
 
-            if (!player.matrix[y][x])
-                continue;
+            if (
+                !player.matrix[y][x]
+            ) continue;
 
             const boardX =
                 player.x + x;
@@ -349,8 +629,10 @@ function collision() {
 
 function movePlayer(dir) {
 
-    if (!running || paused)
-        return;
+    if (
+        !running ||
+        paused
+    ) return;
 
     player.x += dir;
 
@@ -370,7 +652,7 @@ function movePlayer(dir) {
 function rotateMatrix(matrix) {
 
     return matrix[0].map(
-        (_, index) =>
+        (_,index) =>
             matrix
                 .map(row => row[index])
                 .reverse()
@@ -380,15 +662,21 @@ function rotateMatrix(matrix) {
 
 function rotatePlayer() {
 
-    if (!running || paused)
-        return;
+    if (
+        !running ||
+        paused
+    ) return;
 
-    const oldMatrix = player.matrix;
+    const oldMatrix =
+        player.matrix;
+
+    const oldX =
+        player.x;
 
     player.matrix =
-        rotateMatrix(player.matrix);
-
-    const oldX = player.x;
+        rotateMatrix(
+            player.matrix
+        );
 
     if (collision()) {
 
@@ -413,19 +701,24 @@ function rotatePlayer() {
 
     }
 
-    playTone(420, 0.05);
+    playTone(
+        420,
+        .05
+    );
 
 }
 
 
 /* =========================================================
-   SOFT DROP
+   DROP
 ========================================================= */
 
 function dropPlayer() {
 
-    if (!running || paused)
-        return;
+    if (
+        !running ||
+        paused
+    ) return;
 
     player.y++;
 
@@ -448,8 +741,10 @@ function dropPlayer() {
 
 function hardDrop() {
 
-    if (!running || paused)
-        return;
+    if (
+        !running ||
+        paused
+    ) return;
 
     let distance = 0;
 
@@ -465,13 +760,35 @@ function hardDrop() {
 
     distance--;
 
-    score += Math.max(0, distance * 2);
+    const points =
+        Math.max(
+            0,
+            distance * 2
+        );
+
+    score += points;
+
+    addXP(
+        Math.max(
+            1,
+            Math.floor(
+                distance / 2
+            )
+        )
+    );
+
+    showScorePopup(
+        points
+    );
 
     shakeAmount = 7;
 
-    playTone(90, 0.12);
-
     createDropParticles();
+
+    playTone(
+        90,
+        .12
+    );
 
     lockPiece();
 
@@ -488,19 +805,22 @@ function holdCurrent() {
         !running ||
         paused ||
         !canHold
-    )
-        return;
+    ) return;
 
     if (!holdPiece) {
 
         holdPiece = {
 
-            name: player.name,
+            name:
+                player.name,
 
             matrix:
-                player.matrix.map(row => [...row]),
+                player.matrix.map(
+                    row => [...row]
+                ),
 
-            color: player.color
+            color:
+                player.color
 
         };
 
@@ -509,37 +829,49 @@ function holdCurrent() {
     }
     else {
 
-        const temp = holdPiece;
+        const temp =
+            holdPiece;
 
         holdPiece = {
 
-            name: player.name,
+            name:
+                player.name,
 
             matrix:
-                player.matrix.map(row => [...row]),
+                player.matrix.map(
+                    row => [...row]
+                ),
 
-            color: player.color
+            color:
+                player.color
 
         };
 
         player = {
 
-            name: temp.name,
+            name:
+                temp.name,
 
             matrix:
-                temp.matrix.map(row => [...row]),
+                temp.matrix.map(
+                    row => [...row]
+                ),
 
-            color: temp.color,
+            color:
+                temp.color,
 
             x: 0,
+
             y: 0
 
         };
 
         player.x =
             Math.floor(
-                (COLS -
-                    player.matrix[0].length) / 2
+                (
+                    COLS -
+                    player.matrix[0].length
+                ) / 2
             );
 
     }
@@ -548,7 +880,10 @@ function holdCurrent() {
 
     drawPreviews();
 
-    playTone(260, 0.08);
+    playTone(
+        260,
+        .08
+    );
 
 }
 
@@ -560,10 +895,10 @@ function holdCurrent() {
 function lockPiece() {
 
     player.matrix.forEach(
-        (row, y) => {
+        (row,y) => {
 
             row.forEach(
-                (value, x) => {
+                (value,x) => {
 
                     if (!value)
                         return;
@@ -580,7 +915,10 @@ function lockPiece() {
                     ) {
 
                         board[boardY][boardX] = {
-                            color: player.color
+
+                            color:
+                                player.color
+
                         };
 
                     }
@@ -594,9 +932,13 @@ function lockPiece() {
     const cleared =
         clearLines();
 
-    if (cleared === 0) {
+    if (
+        cleared === 0
+    ) {
 
         combo = 0;
+
+        multiplier = 1;
 
     }
 
@@ -615,10 +957,16 @@ function clearLines() {
 
     let count = 0;
 
-    for (let y = ROWS - 1; y >= 0; y--) {
+    for (
+        let y = ROWS - 1;
+        y >= 0;
+        y--
+    ) {
 
         if (
-            board[y].every(cell => cell)
+            board[y].every(
+                cell => cell
+            )
         ) {
 
             clearingRows.push(y);
@@ -629,85 +977,260 @@ function clearLines() {
 
     }
 
-    if (count > 0) {
+    if (!count)
+        return 0;
 
-        clearTimer = 180;
 
-        lines += count;
+    lines += count;
 
-        combo++;
+    combo++;
 
-        const base =
-            [0, 100, 300, 500, 800][count] || 800;
 
-        const comboBonus =
-            combo > 1
-                ? combo * 100
-                : 0;
-
-        score +=
-            (base + comboBonus) * level;
-
-        if (
-            score > bestScore
-        ) {
-
-            bestScore = score;
-
-        }
-
-        createLineParticles();
-
-        shakeAmount =
-            5 + count * 3;
-
-        clearFlash.classList.remove("show");
-
-        void clearFlash.offsetWidth;
-
-        clearFlash.classList.add("show");
-
-        if (combo > 1) {
-
-            showCombo();
-
-        }
-
-        playTone(
-            300 + count * 100,
-            0.15
+    multiplier =
+        Math.min(
+            5,
+            1 +
+            Math.floor(
+                combo / 2
+            )
         );
 
-        const previousLevel =
-            level;
 
-        level =
-            Math.floor(lines / 10) + 1;
+    const base =
+        [0,100,300,500,800][count] ||
+        800;
 
-        if (
-            level > previousLevel
-        ) {
 
-            showLevelUp();
+    const comboBonus =
+        combo > 1
+            ? combo * 100
+            : 0;
 
-            playTone(700, 0.25);
 
-        }
+    const points =
+        (
+            base +
+            comboBonus
+        ) *
+        level *
+        multiplier;
 
-        updateSpeed();
 
-        saveBest(
-            gameMode,
-            bestScore
+    score += points;
+
+
+    showScorePopup(
+        points
+    );
+
+
+    addXP(
+        count * 10 +
+        combo * 5
+    );
+
+
+    if (
+        count === 4
+    ) {
+
+        unlockAchievement(
+            "tetris",
+            "TETRIS CLEAR"
         );
-
-        updateUI();
-
-        return count;
 
     }
 
-    return 0;
+
+    if (
+        combo >= 3
+    ) {
+
+        unlockAchievement(
+            "combo3",
+            "3X COMBO"
+        );
+
+    }
+
+
+    if (
+        combo >= 5
+    ) {
+
+        unlockAchievement(
+            "combo5",
+            "5X COMBO"
+        );
+
+    }
+
+
+    if (
+        board.every(
+            row =>
+                row.every(
+                    cell =>
+                        !cell
+                )
+        )
+    ) {
+
+        unlockAchievement(
+            "perfect",
+            "PERFECT CLEAR"
+        );
+
+    }
+
+
+    if (
+        score > bestScore
+    ) {
+
+        bestScore =
+            score;
+
+    }
+
+
+    createLineParticles();
+
+
+    shakeAmount =
+        5 +
+        count * 3;
+
+
+    clearTimer = 180;
+
+
+    clearFlash.classList.remove(
+        "show"
+    );
+
+    void clearFlash.offsetWidth;
+
+    clearFlash.classList.add(
+        "show"
+    );
+
+
+    if (
+        combo > 1
+    ) {
+
+        showCombo();
+
+    }
+
+
+    playTone(
+        300 +
+        count * 100,
+        .15
+    );
+
+
+    const previousLevel =
+        level;
+
+
+    level =
+        Math.floor(
+            lines / 10
+        ) + 1;
+
+
+    if (
+        level >
+        previousLevel
+    ) {
+
+        showLevelUp();
+
+        unlockAchievement(
+            `level${level}`,
+            `LEVEL ${level}`
+        );
+
+        playTone(
+            700,
+            .25
+        );
+
+    }
+
+
+    updateSpeed();
+
+    saveBest(
+        gameMode,
+        bestScore
+    );
+
+
+    updateMission();
+
+    updateUI();
+
+
+    return count;
+
+}
+
+
+/* =========================================================
+   MISSION
+========================================================= */
+
+function updateMission() {
+
+    const progress =
+        Math.min(
+            missionTarget,
+            lines -
+            missionStartLines
+        );
+
+    const percent =
+        (
+            progress /
+            missionTarget
+        ) * 100;
+
+    missionFill.style.width =
+        `${percent}%`;
+
+    missionText.textContent =
+        `CLEAR ${
+            missionTarget -
+            progress
+        } MORE LINES`;
+
+
+    if (
+        progress >=
+        missionTarget
+    ) {
+
+        unlockAchievement(
+            "mission",
+            "MISSION COMPLETE"
+        );
+
+        addXP(50);
+
+        missionStartLines =
+            lines;
+
+        missionTarget =
+            Math.min(
+                20,
+                missionTarget + 5
+            );
+
+    }
 
 }
 
@@ -718,20 +1241,28 @@ function clearLines() {
 
 function finishLineClear() {
 
-    if (!clearingRows.length)
-        return;
+    if (
+        !clearingRows.length
+    ) return;
 
     clearingRows
-        .sort((a, b) => b - a)
-        .forEach(row => {
+        .sort(
+            (a,b) => b-a
+        )
+        .forEach(
+            row => {
 
-            board.splice(row, 1);
+                board.splice(
+                    row,
+                    1
+                );
 
-            board.unshift(
-                Array(COLS).fill(0)
-            );
+                board.unshift(
+                    Array(COLS).fill(0)
+                );
 
-        });
+            }
+        );
 
     clearingRows = [];
 
@@ -755,14 +1286,16 @@ function updateSpeed() {
         Math.max(
             80,
             baseSpeed -
-            (level - 1) * 55
+            (
+                level - 1
+            ) * 55
         );
 
 }
 
 
 /* =========================================================
-   DRAW BOARD
+   DRAW
 ========================================================= */
 
 function drawBoard() {
@@ -776,29 +1309,46 @@ function drawBoard() {
 
     ctx.save();
 
-    if (shakeAmount > 0) {
+
+    if (
+        shakeAmount > 0
+    ) {
 
         ctx.translate(
-            (Math.random() - 0.5) *
-                shakeAmount,
-            (Math.random() - 0.5) *
-                shakeAmount
+            (
+                Math.random() -
+                .5
+            ) *
+            shakeAmount,
+
+            (
+                Math.random() -
+                .5
+            ) *
+            shakeAmount
         );
 
-        shakeAmount *= 0.88;
+        shakeAmount *= .88;
 
-        if (shakeAmount < 0.3)
+        if (
+            shakeAmount < .3
+        ) {
+
             shakeAmount = 0;
+
+        }
 
     }
 
+
     drawGrid();
 
+
     board.forEach(
-        (row, y) => {
+        (row,y) => {
 
             row.forEach(
-                (cell, x) => {
+                (cell,x) => {
 
                     if (cell) {
 
@@ -823,19 +1373,32 @@ function drawBoard() {
 
         drawGhost();
 
+
         player.matrix.forEach(
-            (row, y) => {
+            (row,y) => {
 
                 row.forEach(
-                    (value, x) => {
+                    (value,x) => {
 
                         if (value) {
 
                             drawBlock(
                                 ctx,
-                                (player.x + x) * BLOCK,
-                                (player.y + y) * BLOCK,
+
+                                (
+                                    player.x +
+                                    x
+                                ) *
                                 BLOCK,
+
+                                (
+                                    player.y +
+                                    y
+                                ) *
+                                BLOCK,
+
+                                BLOCK,
+
                                 player.color
                             );
 
@@ -849,6 +1412,7 @@ function drawBoard() {
 
     }
 
+
     ctx.restore();
 
 }
@@ -861,9 +1425,10 @@ function drawBoard() {
 function drawGrid() {
 
     ctx.strokeStyle =
-        "rgba(255,255,255,0.035)";
+        "rgba(255,255,255,.035)";
 
     ctx.lineWidth = 1;
+
 
     for (
         let x = 0;
@@ -886,6 +1451,7 @@ function drawGrid() {
         ctx.stroke();
 
     }
+
 
     for (
         let y = 0;
@@ -924,10 +1490,15 @@ function drawBlock(
     color
 ) {
 
-    context.fillStyle = color;
+    context.fillStyle =
+        color;
 
-    context.shadowColor = color;
-    context.shadowBlur = 12;
+    context.shadowColor =
+        color;
+
+    context.shadowBlur =
+        12;
+
 
     context.fillRect(
         x + 2,
@@ -936,10 +1507,13 @@ function drawBlock(
         size - 4
     );
 
+
     context.shadowBlur = 0;
 
+
     context.strokeStyle =
-        "rgba(255,255,255,0.25)";
+        "rgba(255,255,255,.25)";
+
 
     context.strokeRect(
         x + 3,
@@ -963,6 +1537,7 @@ function drawGhost() {
     let ghostY =
         player.y;
 
+
     while (true) {
 
         player.y++;
@@ -980,16 +1555,20 @@ function drawGhost() {
 
     }
 
+
     player.y =
         oldY;
 
-    ctx.globalAlpha = 0.15;
+
+    ctx.globalAlpha =
+        .15;
+
 
     player.matrix.forEach(
-        (row, y) => {
+        (row,y) => {
 
             row.forEach(
-                (value, x) => {
+                (value,x) => {
 
                     if (value) {
 
@@ -997,12 +1576,23 @@ function drawGhost() {
                             player.color;
 
                         ctx.fillRect(
-                            (player.x + x) *
-                                BLOCK + 4,
-                            (ghostY + y) *
-                                BLOCK + 4,
+
+                            (
+                                player.x +
+                                x
+                            ) *
+                            BLOCK + 4,
+
+                            (
+                                ghostY +
+                                y
+                            ) *
+                            BLOCK + 4,
+
                             BLOCK - 8,
+
                             BLOCK - 8
+
                         );
 
                     }
@@ -1012,6 +1602,7 @@ function drawGhost() {
 
         }
     );
+
 
     ctx.globalAlpha = 1;
 
@@ -1038,6 +1629,7 @@ function drawPreviews() {
 
 }
 
+
 function drawPreview(
     context,
     targetCanvas,
@@ -1051,38 +1643,57 @@ function drawPreview(
         targetCanvas.height
     );
 
+
     if (!piece)
         return;
 
+
     const size = 22;
 
+
     const width =
-        piece.matrix[0].length * size;
+        piece.matrix[0].length *
+        size;
+
 
     const height =
-        piece.matrix.length * size;
+        piece.matrix.length *
+        size;
+
 
     const offsetX =
-        (targetCanvas.width - width) / 2;
+        (
+            targetCanvas.width -
+            width
+        ) / 2;
+
 
     const offsetY =
-        (targetCanvas.height - height) / 2;
+        (
+            targetCanvas.height -
+            height
+        ) / 2;
+
 
     piece.matrix.forEach(
-        (row, y) => {
+        (row,y) => {
 
             row.forEach(
-                (value, x) => {
+                (value,x) => {
 
                     if (value) {
 
                         drawBlock(
                             context,
+
                             offsetX +
-                                x * size,
+                            x * size,
+
                             offsetY +
-                                y * size,
+                            y * size,
+
                             size,
+
                             piece.color
                         );
 
@@ -1110,15 +1721,20 @@ function createParticle(
     particles.push({
 
         x,
+
         y,
 
         vx:
-            (Math.random() - 0.5) *
-            4,
+            (
+                Math.random() -
+                .5
+            ) * 4,
 
         vy:
-            (Math.random() - 0.5) *
-            4,
+            (
+                Math.random() -
+                .5
+            ) * 4,
 
         life: 1,
 
@@ -1128,10 +1744,12 @@ function createParticle(
 
 }
 
+
 function createDropParticles() {
 
     if (!player)
         return;
+
 
     for (
         let i = 0;
@@ -1140,14 +1758,21 @@ function createDropParticles() {
     ) {
 
         createParticle(
-            player.x * BLOCK,
-            player.y * BLOCK,
+
+            player.x *
+            BLOCK,
+
+            player.y *
+            BLOCK,
+
             player.color
+
         );
 
     }
 
 }
+
 
 function createLineParticles() {
 
@@ -1161,13 +1786,17 @@ function createLineParticles() {
             ) {
 
                 createParticle(
-                    Math.random() *
-                        canvas.width,
 
-                    row * BLOCK +
-                        Math.random() * BLOCK,
+                    Math.random() *
+                    canvas.width,
+
+                    row *
+                    BLOCK +
+                    Math.random() *
+                    BLOCK,
 
                     "#ffffff"
+
                 );
 
             }
@@ -1176,6 +1805,7 @@ function createLineParticles() {
     );
 
 }
+
 
 function updateParticles() {
 
@@ -1189,13 +1819,14 @@ function updateParticles() {
                 particle.vy;
 
             particle.vy +=
-                0.08;
+                .08;
 
             particle.life -=
-                0.025;
+                .025;
 
         }
     );
+
 
     particles =
         particles.filter(
@@ -1204,6 +1835,7 @@ function updateParticles() {
         );
 
 }
+
 
 function drawParticles() {
 
@@ -1226,6 +1858,7 @@ function drawParticles() {
         }
     );
 
+
     ctx.globalAlpha = 1;
 
 }
@@ -1237,24 +1870,58 @@ function drawParticles() {
 
 function showLevelUp() {
 
-    levelFlash.classList.remove("show");
+    levelFlash.classList.remove(
+        "show"
+    );
 
     void levelFlash.offsetWidth;
 
-    levelFlash.classList.add("show");
+    levelFlash.classList.add(
+        "show"
+    );
 
 }
+
 
 function showCombo() {
 
     comboFlash.textContent =
         `COMBO ×${combo}`;
 
-    comboFlash.classList.remove("show");
+    comboFlash.classList.remove(
+        "show"
+    );
 
     void comboFlash.offsetWidth;
 
-    comboFlash.classList.add("show");
+    comboFlash.classList.add(
+        "show"
+    );
+
+}
+
+
+function showScorePopup(points) {
+
+    if (
+        !points ||
+        points <= 0
+    ) return;
+
+
+    scorePopup.textContent =
+        `+${points}`;
+
+
+    scorePopup.classList.remove(
+        "show"
+    );
+
+    void scorePopup.offsetWidth;
+
+    scorePopup.classList.add(
+        "show"
+    );
 
 }
 
@@ -1265,6 +1932,7 @@ function showCombo() {
 
 let audioContext = null;
 
+
 function playTone(
     frequency,
     duration
@@ -1272,6 +1940,7 @@ function playTone(
 
     if (!soundEnabled)
         return;
+
 
     try {
 
@@ -1285,28 +1954,41 @@ function playTone(
 
         }
 
+
         const oscillator =
-            audioContext.createOscillator();
+            audioContext
+                .createOscillator();
+
 
         const gain =
-            audioContext.createGain();
+            audioContext
+                .createGain();
+
 
         oscillator.frequency.value =
             frequency;
 
+
         oscillator.type =
             "square";
 
-        gain.gain.value =
-            0.04;
 
-        oscillator.connect(gain);
+        gain.gain.value =
+            .04;
+
+
+        oscillator.connect(
+            gain
+        );
+
 
         gain.connect(
             audioContext.destination
         );
 
+
         oscillator.start();
+
 
         oscillator.stop(
             audioContext.currentTime +
@@ -1314,7 +1996,7 @@ function playTone(
         );
 
     }
-    catch (error) {
+    catch(error) {
 
         console.log(
             "Audio unavailable"
@@ -1346,11 +2028,9 @@ function updateUI() {
     comboEl.textContent =
         combo;
 
-    modeLabel.textContent =
-        gameMode.toUpperCase();
+    multiplierEl.textContent =
+        `x${multiplier}`;
 
-    difficultyLabel.textContent =
-        difficulty.toUpperCase();
 
     if (
         gameMode === "time"
@@ -1372,20 +2052,29 @@ function updateUI() {
 
     }
 
+
+    updateMission();
+
 }
 
 
 /* =========================================================
-   START GAME
+   START
 ========================================================= */
 
 function startGame() {
 
-    menuScreen.classList.remove("active");
+    menuScreen.classList.remove(
+        "active"
+    );
 
-    gameScreen.classList.add("active");
+    gameScreen.classList.add(
+        "active"
+    );
+
 
     createBoard();
+
 
     score = 0;
 
@@ -1395,17 +2084,26 @@ function startGame() {
 
     combo = 0;
 
+    multiplier = 1;
+
+
     holdPiece = null;
 
-    nextPiece = randomPiece();
+    nextPiece =
+        randomPiece();
+
 
     bestScore =
-        getBest(gameMode);
+        getBest(
+            gameMode
+        );
+
 
     timeRemaining =
         gameMode === "time"
             ? 60
             : Infinity;
+
 
     clearingRows = [];
 
@@ -1413,11 +2111,19 @@ function startGame() {
 
     shakeAmount = 0;
 
+
+    missionStartLines = 0;
+
+    missionTarget = 5;
+
+
     updateSpeed();
+
 
     running = true;
 
     paused = false;
+
 
     pauseOverlay.classList.remove(
         "active"
@@ -1427,7 +2133,9 @@ function startGame() {
         "active"
     );
 
+
     spawnPlayer();
+
 
     updateUI();
 
@@ -1446,10 +2154,13 @@ function startCountdown() {
         "active"
     );
 
+
     let count = 3;
+
 
     countdown.textContent =
         count;
+
 
     const timer =
         setInterval(
@@ -1457,14 +2168,17 @@ function startCountdown() {
 
                 count--;
 
-                if (count > 0) {
+
+                if (
+                    count > 0
+                ) {
 
                     countdown.textContent =
                         count;
 
                     playTone(
                         350,
-                        0.08
+                        .08
                     );
 
                 }
@@ -1475,8 +2189,9 @@ function startCountdown() {
 
                     playTone(
                         800,
-                        0.15
+                        .15
                     );
+
 
                     setTimeout(
                         () => {
@@ -1489,7 +2204,10 @@ function startCountdown() {
                         500
                     );
 
-                    clearInterval(timer);
+
+                    clearInterval(
+                        timer
+                    );
 
                 }
 
@@ -1509,8 +2227,10 @@ function togglePause() {
     if (!running)
         return;
 
+
     paused =
         !paused;
+
 
     pauseOverlay.classList.toggle(
         "active",
@@ -1530,8 +2250,10 @@ function endGame() {
 
     paused = false;
 
+
     if (
-        score > getBest(gameMode)
+        score >
+        getBest(gameMode)
     ) {
 
         saveBest(
@@ -1539,30 +2261,58 @@ function endGame() {
             score
         );
 
+        unlockAchievement(
+            "highscore",
+            "NEW HIGH SCORE"
+        );
+
     }
+
+
+    if (
+        lines >= 20
+    ) {
+
+        unlockAchievement(
+            "survivor20",
+            "20 LINE SURVIVOR"
+        );
+
+    }
+
 
     gameOverOverlay.classList.add(
         "active"
     );
 
+
     document.getElementById(
         "finalScore"
-    ).textContent = score;
+    ).textContent =
+        score;
+
 
     document.getElementById(
         "finalLines"
-    ).textContent = lines;
+    ).textContent =
+        lines;
+
 
     document.getElementById(
         "finalLevel"
-    ).textContent = level;
+    ).textContent =
+        level;
+
+
+    document.getElementById(
+        "gameOverAchievement"
+    ).textContent =
+        combo >= 5
+            ? "★ ELITE COMBO ACHIEVED"
+            : "";
+
 
     updateMenuScores();
-
-    playTone(
-        100,
-        0.3
-    );
 
 }
 
@@ -1577,6 +2327,7 @@ function returnToMenu() {
 
     paused = false;
 
+
     pauseOverlay.classList.remove(
         "active"
     );
@@ -1589,6 +2340,7 @@ function returnToMenu() {
         "active"
     );
 
+
     gameScreen.classList.remove(
         "active"
     );
@@ -1597,7 +2349,10 @@ function returnToMenu() {
         "active"
     );
 
+
     updateMenuScores();
+
+    updateProfileUI();
 
 }
 
@@ -1609,10 +2364,13 @@ function returnToMenu() {
 function update(time = 0) {
 
     const delta =
-        time - lastTime;
+        time -
+        lastTime;
+
 
     lastTime =
         time;
+
 
     if (
         running &&
@@ -1622,7 +2380,9 @@ function update(time = 0) {
         )
     ) {
 
-        dropCounter += delta;
+        dropCounter +=
+            delta;
+
 
         if (
             dropCounter >
@@ -1633,12 +2393,14 @@ function update(time = 0) {
 
         }
 
+
         if (
             gameMode === "time"
         ) {
 
             timeRemaining -=
                 delta / 1000;
+
 
             if (
                 timeRemaining <= 0
@@ -1652,12 +2414,14 @@ function update(time = 0) {
 
         }
 
+
         if (
             clearTimer > 0
         ) {
 
             clearTimer -=
                 delta;
+
 
             if (
                 clearTimer <= 0
@@ -1671,6 +2435,7 @@ function update(time = 0) {
 
     }
 
+
     updateParticles();
 
     drawBoard();
@@ -1679,7 +2444,10 @@ function update(time = 0) {
 
     updateUI();
 
-    requestAnimationFrame(update);
+
+    requestAnimationFrame(
+        update
+    );
 
 }
 
@@ -1703,6 +2471,7 @@ document.addEventListener(
 
         }
 
+
         if (
             event.code ===
             "ArrowRight"
@@ -1713,6 +2482,7 @@ document.addEventListener(
             movePlayer(1);
 
         }
+
 
         if (
             event.code ===
@@ -1725,6 +2495,7 @@ document.addEventListener(
 
         }
 
+
         if (
             event.code ===
             "ArrowUp"
@@ -1735,6 +2506,7 @@ document.addEventListener(
             rotatePlayer();
 
         }
+
 
         if (
             event.code ===
@@ -1747,6 +2519,7 @@ document.addEventListener(
 
         }
 
+
         if (
             event.code ===
             "KeyC"
@@ -1755,6 +2528,7 @@ document.addEventListener(
             holdCurrent();
 
         }
+
 
         if (
             event.code ===
@@ -1770,69 +2544,87 @@ document.addEventListener(
 
 
 /* =========================================================
-   MENU SELECTION
+   MODE
 ========================================================= */
 
 document
-    .querySelectorAll(".mode-btn")
-    .forEach(button => {
+    .querySelectorAll(
+        ".mode-btn"
+    )
+    .forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                document
-                    .querySelectorAll(
-                        ".mode-btn"
-                    )
-                    .forEach(btn =>
-                        btn.classList.remove(
-                            "selected"
+                    document
+                        .querySelectorAll(
+                            ".mode-btn"
                         )
+                        .forEach(
+                            btn =>
+                                btn.classList.remove(
+                                    "selected"
+                                )
+                        );
+
+
+                    button.classList.add(
+                        "selected"
                     );
 
-                button.classList.add(
-                    "selected"
-                );
 
-                gameMode =
-                    button.dataset.mode;
+                    gameMode =
+                        button.dataset.mode;
 
-            }
-        );
+                }
+            );
 
-    });
+        }
+    );
 
+
+/* =========================================================
+   DIFFICULTY
+========================================================= */
 
 document
-    .querySelectorAll(".difficulty-btn")
-    .forEach(button => {
+    .querySelectorAll(
+        ".difficulty-btn"
+    )
+    .forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                document
-                    .querySelectorAll(
-                        ".difficulty-btn"
-                    )
-                    .forEach(btn =>
-                        btn.classList.remove(
-                            "selected"
+                    document
+                        .querySelectorAll(
+                            ".difficulty-btn"
                         )
+                        .forEach(
+                            btn =>
+                                btn.classList.remove(
+                                    "selected"
+                                )
+                        );
+
+
+                    button.classList.add(
+                        "selected"
                     );
 
-                button.classList.add(
-                    "selected"
-                );
 
-                difficulty =
-                    button.dataset.difficulty;
+                    difficulty =
+                        button.dataset.difficulty;
 
-            }
-        );
+                }
+            );
 
-    });
+        }
+    );
 
 
 /* =========================================================
@@ -1840,60 +2632,76 @@ document
 ========================================================= */
 
 document
-    .getElementById("playBtn")
-    .addEventListener(
-        "click",
-        startGame
-    );
-
-document
-    .getElementById("pauseBtn")
-    .addEventListener(
-        "click",
-        togglePause
-    );
-
-document
-    .getElementById("resumeBtn")
-    .addEventListener(
-        "click",
-        togglePause
-    );
-
-document
-    .getElementById("menuBtn")
-    .addEventListener(
-        "click",
-        returnToMenu
-    );
-
-document
-    .getElementById("backMenuBtn")
-    .addEventListener(
-        "click",
-        returnToMenu
-    );
-
-document
-    .getElementById("restartBtn")
+    .getElementById(
+        "playBtn"
+    )
     .addEventListener(
         "click",
         startGame
     );
 
 
-/* =========================================================
-   SOUND
-========================================================= */
+document
+    .getElementById(
+        "pauseBtn"
+    )
+    .addEventListener(
+        "click",
+        togglePause
+    );
+
 
 document
-    .getElementById("soundBtn")
+    .getElementById(
+        "resumeBtn"
+    )
+    .addEventListener(
+        "click",
+        togglePause
+    );
+
+
+document
+    .getElementById(
+        "menuBtn"
+    )
+    .addEventListener(
+        "click",
+        returnToMenu
+    );
+
+
+document
+    .getElementById(
+        "backMenuBtn"
+    )
+    .addEventListener(
+        "click",
+        returnToMenu
+    );
+
+
+document
+    .getElementById(
+        "restartBtn"
+    )
+    .addEventListener(
+        "click",
+        startGame
+    );
+
+
+document
+    .getElementById(
+        "soundBtn"
+    )
     .addEventListener(
         "click",
         () => {
 
             soundEnabled =
                 !soundEnabled;
+
 
             document.getElementById(
                 "soundBtn"
@@ -1907,39 +2715,55 @@ document
 
 
 /* =========================================================
-   MOBILE CONTROLS
+   MOBILE
 ========================================================= */
 
 document
-    .getElementById("leftBtn")
+    .getElementById(
+        "leftBtn"
+    )
     .addEventListener(
         "click",
-        () => movePlayer(-1)
+        () =>
+            movePlayer(-1)
     );
 
+
 document
-    .getElementById("rightBtn")
+    .getElementById(
+        "rightBtn"
+    )
     .addEventListener(
         "click",
-        () => movePlayer(1)
+        () =>
+            movePlayer(1)
     );
 
+
 document
-    .getElementById("downBtn")
+    .getElementById(
+        "downBtn"
+    )
     .addEventListener(
         "click",
         dropPlayer
     );
 
+
 document
-    .getElementById("rotateBtn")
+    .getElementById(
+        "rotateBtn"
+    )
     .addEventListener(
         "click",
         rotatePlayer
     );
 
+
 document
-    .getElementById("dropBtn")
+    .getElementById(
+        "dropBtn"
+    )
     .addEventListener(
         "click",
         hardDrop
@@ -1947,11 +2771,13 @@ document
 
 
 /* =========================================================
-   TOUCH SWIPE
+   TOUCH
 ========================================================= */
 
 let touchStartX = 0;
+
 let touchStartY = 0;
+
 
 canvas.addEventListener(
     "touchstart",
@@ -1967,8 +2793,11 @@ canvas.addEventListener(
             touch.clientY;
 
     },
-    { passive: true }
+    {
+        passive: true
+    }
 );
+
 
 canvas.addEventListener(
     "touchend",
@@ -1977,23 +2806,31 @@ canvas.addEventListener(
         const touch =
             event.changedTouches[0];
 
+
         const dx =
             touch.clientX -
             touchStartX;
 
+
         const dy =
             touch.clientY -
             touchStartY;
+
 
         if (
             Math.abs(dx) >
             Math.abs(dy)
         ) {
 
-            if (Math.abs(dx) > 25) {
+            if (
+                Math.abs(dx) >
+                25
+            ) {
 
                 movePlayer(
-                    dx > 0 ? 1 : -1
+                    dx > 0
+                        ? 1
+                        : -1
                 );
 
             }
@@ -2001,12 +2838,16 @@ canvas.addEventListener(
         }
         else {
 
-            if (dy > 40) {
+            if (
+                dy > 40
+            ) {
 
                 dropPlayer();
 
             }
-            else if (dy < -40) {
+            else if (
+                dy < -40
+            ) {
 
                 rotatePlayer();
 
@@ -2015,7 +2856,9 @@ canvas.addEventListener(
         }
 
     },
-    { passive: true }
+    {
+        passive: true
+    }
 );
 
 
@@ -2025,6 +2868,10 @@ canvas.addEventListener(
 
 updateMenuScores();
 
+updateProfileUI();
+
 createBoard();
 
-requestAnimationFrame(update);
+requestAnimationFrame(
+    update
+);
