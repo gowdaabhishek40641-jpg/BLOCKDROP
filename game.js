@@ -17,15 +17,16 @@ const holdCtx =
     holdCanvas.getContext("2d");
 
 
-/* =========================================================
+/* =====================================================
    CONFIG
-========================================================= */
+===================================================== */
 
 const COLS = 10;
 
 const ROWS = 20;
 
 const BLOCK = 30;
+
 
 let board = [];
 
@@ -36,6 +37,7 @@ let nextPiece = null;
 let holdPiece = null;
 
 let canHold = true;
+
 
 let score = 0;
 
@@ -49,9 +51,11 @@ let combo = 0;
 
 let multiplier = 1;
 
+
 let gameMode = "classic";
 
 let difficulty = "normal";
+
 
 let running = false;
 
@@ -59,13 +63,16 @@ let paused = false;
 
 let soundEnabled = true;
 
+
 let dropCounter = 0;
 
 let lastTime = 0;
 
 let dropInterval = 800;
 
+
 let timeRemaining = 60;
+
 
 let shakeAmount = 0;
 
@@ -76,9 +83,9 @@ let clearingRows = [];
 let clearTimer = 0;
 
 
-/* =========================================================
-   PLAYER PROFILE
-========================================================= */
+/* =====================================================
+   PLAYER DATA
+===================================================== */
 
 let playerXP =
     Number(
@@ -87,12 +94,14 @@ let playerXP =
         ) || 0
     );
 
+
 let playerLevel =
     Number(
         localStorage.getItem(
             "blockdrop_player_level"
         ) || 1
     );
+
 
 let achievements =
     JSON.parse(
@@ -102,18 +111,112 @@ let achievements =
     );
 
 
-/* =========================================================
+let gameHistory =
+    JSON.parse(
+        localStorage.getItem(
+            "blockdrop_history"
+        ) || "[]"
+    );
+
+
+let statistics =
+    JSON.parse(
+        localStorage.getItem(
+            "blockdrop_statistics"
+        ) ||
+        JSON.stringify({
+
+            games: 0,
+
+            totalScore: 0,
+
+            totalLines: 0,
+
+            bestCombo: 0,
+
+            highestLevel: 1
+
+        })
+    );
+
+
+/* =====================================================
+   ACHIEVEMENT DATABASE
+===================================================== */
+
+const ACHIEVEMENT_DATA = [
+
+    {
+        id: "firstgame",
+        icon: "▶",
+        title: "FIRST DROP",
+        description: "Complete your first game."
+    },
+
+    {
+        id: "tetris",
+        icon: "◆",
+        title: "TETRIS CLEAR",
+        description: "Clear four lines at once."
+    },
+
+    {
+        id: "combo3",
+        icon: "🔥",
+        title: "3X COMBO",
+        description: "Reach a 3x combo."
+    },
+
+    {
+        id: "combo5",
+        icon: "⚡",
+        title: "5X COMBO",
+        description: "Reach a 5x combo."
+    },
+
+    {
+        id: "perfect",
+        icon: "★",
+        title: "PERFECT CLEAR",
+        description: "Clear the entire board."
+    },
+
+    {
+        id: "mission",
+        icon: "✓",
+        title: "MISSION COMPLETE",
+        description: "Complete a line mission."
+    },
+
+    {
+        id: "highscore",
+        icon: "🏆",
+        title: "NEW HIGH SCORE",
+        description: "Set a new personal record."
+    },
+
+    {
+        id: "survivor20",
+        icon: "♜",
+        title: "20 LINE SURVIVOR",
+        description: "Clear 20 lines in one game."
+    }
+
+];
+
+
+/* =====================================================
    MISSION
-========================================================= */
+===================================================== */
 
 let missionTarget = 5;
 
 let missionStartLines = 0;
 
 
-/* =========================================================
+/* =====================================================
    PIECES
-========================================================= */
+===================================================== */
 
 const PIECES = [
 
@@ -196,124 +299,147 @@ const PIECES = [
 ];
 
 
-/* =========================================================
+/* =====================================================
    DOM
-========================================================= */
+===================================================== */
 
 const menuScreen =
     document.getElementById(
         "menuScreen"
     );
 
+
 const gameScreen =
     document.getElementById(
         "gameScreen"
     );
+
+
+const profileScreen =
+    document.getElementById(
+        "profileScreen"
+    );
+
 
 const pauseOverlay =
     document.getElementById(
         "pauseOverlay"
     );
 
+
 const startOverlay =
     document.getElementById(
         "startOverlay"
     );
+
 
 const gameOverOverlay =
     document.getElementById(
         "gameOverOverlay"
     );
 
+
 const countdown =
     document.getElementById(
         "countdown"
     );
+
 
 const scoreEl =
     document.getElementById(
         "score"
     );
 
+
 const bestEl =
     document.getElementById(
         "best"
     );
+
 
 const levelEl =
     document.getElementById(
         "level"
     );
 
+
 const linesEl =
     document.getElementById(
         "lines"
     );
+
 
 const comboEl =
     document.getElementById(
         "combo"
     );
 
+
 const multiplierEl =
     document.getElementById(
         "multiplier"
     );
+
 
 const timerEl =
     document.getElementById(
         "timer"
     );
 
+
 const playerLevelEl =
     document.getElementById(
         "playerLevel"
     );
+
 
 const xpFill =
     document.getElementById(
         "xpFill"
     );
 
+
 const xpText =
     document.getElementById(
         "xpText"
     );
+
 
 const missionText =
     document.getElementById(
         "missionText"
     );
 
+
 const missionFill =
     document.getElementById(
         "missionFill"
     );
 
-const objectiveLabel =
-    document.getElementById(
-        "objectiveLabel"
-    );
 
 const levelFlash =
     document.getElementById(
         "levelFlash"
     );
 
+
 const comboFlash =
     document.getElementById(
         "comboFlash"
     );
+
 
 const achievementFlash =
     document.getElementById(
         "achievementFlash"
     );
 
+
 const scorePopup =
     document.getElementById(
         "scorePopup"
     );
+
 
 const clearFlash =
     document.getElementById(
@@ -321,9 +447,9 @@ const clearFlash =
     );
 
 
-/* =========================================================
-   LOCAL STORAGE
-========================================================= */
+/* =====================================================
+   BEST SCORE
+===================================================== */
 
 function getBest(mode) {
 
@@ -335,7 +461,11 @@ function getBest(mode) {
 
 }
 
-function saveBest(mode,value) {
+
+function saveBest(
+    mode,
+    value
+) {
 
     localStorage.setItem(
         `blockdrop_best_${mode}`,
@@ -344,6 +474,7 @@ function saveBest(mode,value) {
 
 }
 
+
 function updateMenuScores() {
 
     document.getElementById(
@@ -351,10 +482,12 @@ function updateMenuScores() {
     ).textContent =
         getBest("classic");
 
+
     document.getElementById(
         "timeBest"
     ).textContent =
         getBest("time");
+
 
     document.getElementById(
         "endlessBest"
@@ -364,79 +497,92 @@ function updateMenuScores() {
 }
 
 
-/* =========================================================
-   PROFILE
-========================================================= */
+/* =====================================================
+   PROFILE XP
+===================================================== */
 
 function updateProfileUI() {
 
     const requiredXP =
         playerLevel * 100;
 
+
     const percent =
         Math.min(
             100,
-            (playerXP / requiredXP) * 100
+            (
+                playerXP /
+                requiredXP
+            ) * 100
         );
+
 
     playerLevelEl.textContent =
         playerLevel;
 
+
     xpFill.style.width =
         `${percent}%`;
+
 
     xpText.textContent =
         `${playerXP} / ${requiredXP} XP`;
 
 }
 
+
 function addXP(amount) {
 
     playerXP += amount;
 
+
     let requiredXP =
         playerLevel * 100;
 
+
     while (
-        playerXP >= requiredXP
+        playerXP >=
+        requiredXP
     ) {
 
-        playerXP -= requiredXP;
+        playerXP -=
+            requiredXP;
+
 
         playerLevel++;
 
+
         requiredXP =
             playerLevel * 100;
+
 
         showAchievement(
             `PLAYER LEVEL ${playerLevel}`
         );
 
-        playTone(
-            700,
-            .2
-        );
-
     }
+
 
     localStorage.setItem(
         "blockdrop_xp",
         playerXP
     );
 
+
     localStorage.setItem(
         "blockdrop_player_level",
         playerLevel
     );
+
 
     updateProfileUI();
 
 }
 
 
-/* =========================================================
+/* =====================================================
    ACHIEVEMENTS
-========================================================= */
+===================================================== */
 
 function unlockAchievement(
     id,
@@ -451,7 +597,9 @@ function unlockAchievement(
 
     }
 
+
     achievements.push(id);
+
 
     localStorage.setItem(
         "blockdrop_achievements",
@@ -460,20 +608,27 @@ function unlockAchievement(
         )
     );
 
-    showAchievement(title);
+
+    showAchievement(
+        title
+    );
 
 }
+
 
 function showAchievement(title) {
 
     achievementFlash.textContent =
         `★ ${title}`;
 
+
     achievementFlash.classList.remove(
         "show"
     );
 
+
     void achievementFlash.offsetWidth;
+
 
     achievementFlash.classList.add(
         "show"
@@ -482,9 +637,419 @@ function showAchievement(title) {
 }
 
 
-/* =========================================================
+/* =====================================================
+   PROFILE SCREEN
+===================================================== */
+
+function openProfile() {
+
+    menuScreen.classList.remove(
+        "active"
+    );
+
+
+    gameScreen.classList.remove(
+        "active"
+    );
+
+
+    profileScreen.classList.add(
+        "active"
+    );
+
+
+    updateProfileScreen();
+
+}
+
+
+function closeProfile() {
+
+    profileScreen.classList.remove(
+        "active"
+    );
+
+
+    menuScreen.classList.add(
+        "active"
+    );
+
+
+    updateMenuScores();
+
+    updateProfileUI();
+
+}
+
+
+/* =====================================================
+   UPDATE PROFILE
+===================================================== */
+
+function updateProfileScreen() {
+
+    document.getElementById(
+        "profileLevel"
+    ).textContent =
+        playerLevel;
+
+
+    const requiredXP =
+        playerLevel * 100;
+
+
+    const percent =
+        Math.min(
+            100,
+            (
+                playerXP /
+                requiredXP
+            ) * 100
+        );
+
+
+    document.getElementById(
+        "profileXpFill"
+    ).style.width =
+        `${percent}%`;
+
+
+    document.getElementById(
+        "profileXpText"
+    ).textContent =
+        `${playerXP} / ${requiredXP} XP`;
+
+
+    document.getElementById(
+        "totalGames"
+    ).textContent =
+        statistics.games;
+
+
+    document.getElementById(
+        "totalScore"
+    ).textContent =
+        statistics.totalScore.toLocaleString();
+
+
+    document.getElementById(
+        "totalLines"
+    ).textContent =
+        statistics.totalLines;
+
+
+    document.getElementById(
+        "profileBest"
+    ).textContent =
+        getGlobalBest();
+
+
+    document.getElementById(
+        "bestCombo"
+    ).textContent =
+        statistics.bestCombo;
+
+
+    document.getElementById(
+        "highestLevel"
+    ).textContent =
+        statistics.highestLevel;
+
+
+    renderAchievements();
+
+    renderHistory();
+
+}
+
+
+function getGlobalBest() {
+
+    return Math.max(
+
+        getBest("classic"),
+
+        getBest("time"),
+
+        getBest("endless")
+
+    );
+
+}
+
+
+/* =====================================================
+   ACHIEVEMENT GALLERY
+===================================================== */
+
+function renderAchievements() {
+
+    const grid =
+        document.getElementById(
+            "achievementGrid"
+        );
+
+
+    grid.innerHTML = "";
+
+
+    ACHIEVEMENT_DATA.forEach(
+        achievement => {
+
+            const unlocked =
+                achievements.includes(
+                    achievement.id
+                );
+
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                `achievement-card ${
+                    unlocked
+                        ? "unlocked"
+                        : "locked"
+                }`;
+
+
+            card.innerHTML = `
+
+                <div class="achievement-icon">
+
+                    ${
+                        unlocked
+                            ? achievement.icon
+                            : "?"
+                    }
+
+                </div>
+
+                <h4>
+                    ${
+                        unlocked
+                            ? achievement.title
+                            : "LOCKED"
+                    }
+                </h4>
+
+                <p>
+                    ${
+                        unlocked
+                            ? achievement.description
+                            : "Achievement not unlocked."
+                    }
+                </p>
+
+            `;
+
+
+            grid.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   GAME HISTORY
+===================================================== */
+
+function saveGameHistory() {
+
+    const record = {
+
+        score: score,
+
+        lines: lines,
+
+        level: level,
+
+        mode: gameMode,
+
+        difficulty: difficulty,
+
+        date:
+            new Date()
+                .toLocaleString()
+
+    };
+
+
+    gameHistory.unshift(
+        record
+    );
+
+
+    gameHistory =
+        gameHistory.slice(
+            0,
+            10
+        );
+
+
+    localStorage.setItem(
+        "blockdrop_history",
+        JSON.stringify(
+            gameHistory
+        )
+    );
+
+}
+
+
+function renderHistory() {
+
+    const container =
+        document.getElementById(
+            "gameHistory"
+        );
+
+
+    container.innerHTML = "";
+
+
+    if (
+        gameHistory.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div class="history-row">
+
+                <span>
+                    NO GAMES
+                </span>
+
+                <span>
+                    PLAY A GAME
+                </span>
+
+                <span>
+                    TO BUILD
+                </span>
+
+                <span>
+                    HISTORY
+                </span>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    gameHistory.forEach(
+        game => {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "history-row";
+
+
+            row.innerHTML = `
+
+                <div>
+
+                    <span>
+                        ${game.date}
+                    </span>
+
+                    <strong>
+                        ${game.mode.toUpperCase()}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        SCORE
+                    </span>
+
+                    <strong class="history-score">
+                        ${game.score.toLocaleString()}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        LINES
+                    </span>
+
+                    <strong>
+                        ${game.lines}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        LEVEL
+                    </span>
+
+                    <strong>
+                        ${game.level}
+                    </strong>
+
+                </div>
+
+            `;
+
+
+            container.appendChild(
+                row
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   CLEAR HISTORY
+===================================================== */
+
+function clearHistory() {
+
+    gameHistory = [];
+
+
+    localStorage.setItem(
+        "blockdrop_history",
+        JSON.stringify([])
+    );
+
+
+    renderHistory();
+
+}
+
+
+/* =====================================================
    BOARD
-========================================================= */
+===================================================== */
 
 function createBoard() {
 
@@ -493,7 +1058,6 @@ function createBoard() {
             {
                 length: ROWS
             },
-
             () =>
                 Array(COLS).fill(0)
         );
@@ -501,9 +1065,9 @@ function createBoard() {
 }
 
 
-/* =========================================================
+/* =====================================================
    RANDOM PIECE
-========================================================= */
+===================================================== */
 
 function randomPiece() {
 
@@ -515,25 +1079,29 @@ function randomPiece() {
             )
         ];
 
+
     return {
 
-        name: source.name,
+        name:
+            source.name,
 
         matrix:
             source.matrix.map(
-                row => [...row]
+                row =>
+                    [...row]
             ),
 
-        color: source.color
+        color:
+            source.color
 
     };
 
 }
 
 
-/* =========================================================
+/* =====================================================
    SPAWN
-========================================================= */
+===================================================== */
 
 function spawnPlayer() {
 
@@ -541,8 +1109,10 @@ function spawnPlayer() {
         nextPiece ||
         randomPiece();
 
+
     nextPiece =
         randomPiece();
+
 
     player.x =
         Math.floor(
@@ -552,24 +1122,30 @@ function spawnPlayer() {
             ) / 2
         );
 
+
     player.y = 0;
+
 
     canHold = true;
 
-    if (collision()) {
+
+    if (
+        collision()
+    ) {
 
         endGame();
 
     }
+
 
     drawPreviews();
 
 }
 
 
-/* =========================================================
+/* =====================================================
    COLLISION
-========================================================= */
+===================================================== */
 
 function collision() {
 
@@ -587,13 +1163,17 @@ function collision() {
 
             if (
                 !player.matrix[y][x]
-            ) continue;
+            )
+                continue;
+
 
             const boardX =
                 player.x + x;
 
+
             const boardY =
                 player.y + y;
+
 
             if (
                 boardX < 0 ||
@@ -604,6 +1184,7 @@ function collision() {
                 return true;
 
             }
+
 
             if (
                 boardY >= 0 &&
@@ -618,25 +1199,31 @@ function collision() {
 
     }
 
+
     return false;
 
 }
 
 
-/* =========================================================
+/* =====================================================
    MOVE
-========================================================= */
+===================================================== */
 
 function movePlayer(dir) {
 
     if (
         !running ||
         paused
-    ) return;
+    )
+        return;
+
 
     player.x += dir;
 
-    if (collision()) {
+
+    if (
+        collision()
+    ) {
 
         player.x -= dir;
 
@@ -645,52 +1232,70 @@ function movePlayer(dir) {
 }
 
 
-/* =========================================================
+/* =====================================================
    ROTATE
-========================================================= */
+===================================================== */
 
 function rotateMatrix(matrix) {
 
     return matrix[0].map(
-        (_,index) =>
+        (_, index) =>
             matrix
-                .map(row => row[index])
+                .map(
+                    row =>
+                        row[index]
+                )
                 .reverse()
     );
 
 }
+
 
 function rotatePlayer() {
 
     if (
         !running ||
         paused
-    ) return;
+    )
+        return;
+
 
     const oldMatrix =
         player.matrix;
 
+
     const oldX =
         player.x;
+
 
     player.matrix =
         rotateMatrix(
             player.matrix
         );
 
-    if (collision()) {
+
+    if (
+        collision()
+    ) {
 
         player.x++;
 
-        if (collision()) {
+
+        if (
+            collision()
+        ) {
 
             player.x =
                 oldX - 1;
 
-            if (collision()) {
+
+            if (
+                collision()
+            ) {
 
                 player.x =
                     oldX;
+
 
                 player.matrix =
                     oldMatrix;
@@ -701,28 +1306,28 @@ function rotatePlayer() {
 
     }
 
-    playTone(
-        420,
-        .05
-    );
-
 }
 
 
-/* =========================================================
+/* =====================================================
    DROP
-========================================================= */
+===================================================== */
 
 function dropPlayer() {
 
     if (
         !running ||
         paused
-    ) return;
+    )
+        return;
+
 
     player.y++;
 
-    if (collision()) {
+
+    if (
+        collision()
+    ) {
 
         player.y--;
 
@@ -730,25 +1335,31 @@ function dropPlayer() {
 
     }
 
+
     dropCounter = 0;
 
 }
 
 
-/* =========================================================
+/* =====================================================
    HARD DROP
-========================================================= */
+===================================================== */
 
 function hardDrop() {
 
     if (
         !running ||
         paused
-    ) return;
+    )
+        return;
+
 
     let distance = 0;
 
-    while (!collision()) {
+
+    while (
+        !collision()
+    ) {
 
         player.y++;
 
@@ -756,9 +1367,11 @@ function hardDrop() {
 
     }
 
+
     player.y--;
 
     distance--;
+
 
     const points =
         Math.max(
@@ -766,7 +1379,9 @@ function hardDrop() {
             distance * 2
         );
 
+
     score += points;
+
 
     addXP(
         Math.max(
@@ -777,27 +1392,23 @@ function hardDrop() {
         )
     );
 
+
     showScorePopup(
         points
     );
 
+
     shakeAmount = 7;
 
-    createDropParticles();
-
-    playTone(
-        90,
-        .12
-    );
 
     lockPiece();
 
 }
 
 
-/* =========================================================
+/* =====================================================
    HOLD
-========================================================= */
+===================================================== */
 
 function holdCurrent() {
 
@@ -805,7 +1416,9 @@ function holdCurrent() {
         !running ||
         paused ||
         !canHold
-    ) return;
+    )
+        return;
+
 
     if (!holdPiece) {
 
@@ -816,13 +1429,15 @@ function holdCurrent() {
 
             matrix:
                 player.matrix.map(
-                    row => [...row]
+                    row =>
+                        [...row]
                 ),
 
             color:
                 player.color
 
         };
+
 
         spawnPlayer();
 
@@ -832,6 +1447,7 @@ function holdCurrent() {
         const temp =
             holdPiece;
 
+
         holdPiece = {
 
             name:
@@ -839,13 +1455,15 @@ function holdCurrent() {
 
             matrix:
                 player.matrix.map(
-                    row => [...row]
+                    row =>
+                        [...row]
                 ),
 
             color:
                 player.color
 
         };
+
 
         player = {
 
@@ -854,7 +1472,8 @@ function holdCurrent() {
 
             matrix:
                 temp.matrix.map(
-                    row => [...row]
+                    row =>
+                        [...row]
                 ),
 
             color:
@@ -866,6 +1485,7 @@ function holdCurrent() {
 
         };
 
+
         player.x =
             Math.floor(
                 (
@@ -876,21 +1496,18 @@ function holdCurrent() {
 
     }
 
+
     canHold = false;
 
-    drawPreviews();
 
-    playTone(
-        260,
-        .08
-    );
+    drawPreviews();
 
 }
 
 
-/* =========================================================
+/* =====================================================
    LOCK
-========================================================= */
+===================================================== */
 
 function lockPiece() {
 
@@ -903,11 +1520,14 @@ function lockPiece() {
                     if (!value)
                         return;
 
+
                     const boardY =
                         player.y + y;
 
+
                     const boardX =
                         player.x + x;
+
 
                     if (
                         boardY >= 0 &&
@@ -929,8 +1549,10 @@ function lockPiece() {
         }
     );
 
+
     const cleared =
         clearLines();
+
 
     if (
         cleared === 0
@@ -942,20 +1564,23 @@ function lockPiece() {
 
     }
 
+
     spawnPlayer();
+
 
     dropCounter = 0;
 
 }
 
 
-/* =========================================================
+/* =====================================================
    CLEAR LINES
-========================================================= */
+===================================================== */
 
 function clearLines() {
 
     let count = 0;
+
 
     for (
         let y = ROWS - 1;
@@ -965,11 +1590,14 @@ function clearLines() {
 
         if (
             board[y].every(
-                cell => cell
+                cell =>
+                    cell
             )
         ) {
 
-            clearingRows.push(y);
+            clearingRows.push(
+                y
+            );
 
             count++;
 
@@ -977,11 +1605,15 @@ function clearLines() {
 
     }
 
-    if (!count)
+
+    if (
+        !count
+    )
         return 0;
 
 
     lines += count;
+
 
     combo++;
 
@@ -1017,11 +1649,6 @@ function clearLines() {
 
 
     score += points;
-
-
-    showScorePopup(
-        points
-    );
 
 
     addXP(
@@ -1067,29 +1694,12 @@ function clearLines() {
 
 
     if (
-        board.every(
-            row =>
-                row.every(
-                    cell =>
-                        !cell
-                )
-        )
+        combo >
+        statistics.bestCombo
     ) {
 
-        unlockAchievement(
-            "perfect",
-            "PERFECT CLEAR"
-        );
-
-    }
-
-
-    if (
-        score > bestScore
-    ) {
-
-        bestScore =
-            score;
+        statistics.bestCombo =
+            combo;
 
     }
 
@@ -1109,7 +1719,9 @@ function clearLines() {
         "show"
     );
 
+
     void clearFlash.offsetWidth;
+
 
     clearFlash.classList.add(
         "show"
@@ -1123,13 +1735,6 @@ function clearLines() {
         showCombo();
 
     }
-
-
-    playTone(
-        300 +
-        count * 100,
-        .15
-    );
 
 
     const previousLevel =
@@ -1149,28 +1754,25 @@ function clearLines() {
 
         showLevelUp();
 
-        unlockAchievement(
-            `level${level}`,
-            `LEVEL ${level}`
-        );
+    }
 
-        playTone(
-            700,
-            .25
-        );
+
+    if (
+        level >
+        statistics.highestLevel
+    ) {
+
+        statistics.highestLevel =
+            level;
 
     }
 
 
     updateSpeed();
 
-    saveBest(
-        gameMode,
-        bestScore
-    );
-
 
     updateMission();
+
 
     updateUI();
 
@@ -1180,9 +1782,9 @@ function clearLines() {
 }
 
 
-/* =========================================================
+/* =====================================================
    MISSION
-========================================================= */
+===================================================== */
 
 function updateMission() {
 
@@ -1193,20 +1795,25 @@ function updateMission() {
             missionStartLines
         );
 
+
     const percent =
         (
             progress /
             missionTarget
         ) * 100;
 
+
     missionFill.style.width =
         `${percent}%`;
 
+
     missionText.textContent =
-        `CLEAR ${
-            missionTarget -
-            progress
-        } MORE LINES`;
+        progress >= missionTarget
+            ? "MISSION COMPLETE"
+            : `CLEAR ${
+                missionTarget -
+                progress
+            } MORE LINES`;
 
 
     if (
@@ -1219,10 +1826,13 @@ function updateMission() {
             "MISSION COMPLETE"
         );
 
+
         addXP(50);
+
 
         missionStartLines =
             lines;
+
 
         missionTarget =
             Math.min(
@@ -1235,19 +1845,22 @@ function updateMission() {
 }
 
 
-/* =========================================================
-   FINISH CLEAR
-========================================================= */
+/* =====================================================
+   CLEAR ANIMATION
+===================================================== */
 
 function finishLineClear() {
 
     if (
         !clearingRows.length
-    ) return;
+    )
+        return;
+
 
     clearingRows
         .sort(
-            (a,b) => b-a
+            (a,b) =>
+                b-a
         )
         .forEach(
             row => {
@@ -1257,6 +1870,7 @@ function finishLineClear() {
                     1
                 );
 
+
                 board.unshift(
                     Array(COLS).fill(0)
                 );
@@ -1264,14 +1878,15 @@ function finishLineClear() {
             }
         );
 
+
     clearingRows = [];
 
 }
 
 
-/* =========================================================
+/* =====================================================
    SPEED
-========================================================= */
+===================================================== */
 
 function updateSpeed() {
 
@@ -1281,6 +1896,7 @@ function updateSpeed() {
             : difficulty === "hard"
                 ? 550
                 : 350;
+
 
     dropInterval =
         Math.max(
@@ -1294,9 +1910,9 @@ function updateSpeed() {
 }
 
 
-/* =========================================================
-   DRAW
-========================================================= */
+/* =====================================================
+   DRAW BOARD
+===================================================== */
 
 function drawBoard() {
 
@@ -1307,6 +1923,7 @@ function drawBoard() {
         canvas.height
     );
 
+
     ctx.save();
 
 
@@ -1315,6 +1932,7 @@ function drawBoard() {
     ) {
 
         ctx.translate(
+
             (
                 Math.random() -
                 .5
@@ -1326,9 +1944,12 @@ function drawBoard() {
                 .5
             ) *
             shakeAmount
+
         );
 
+
         shakeAmount *= .88;
+
 
         if (
             shakeAmount < .3
@@ -1350,14 +1971,22 @@ function drawBoard() {
             row.forEach(
                 (cell,x) => {
 
-                    if (cell) {
+                    if (
+                        cell
+                    ) {
 
                         drawBlock(
+
                             ctx,
+
                             x * BLOCK,
+
                             y * BLOCK,
+
                             BLOCK,
+
                             cell.color
+
                         );
 
                     }
@@ -1369,7 +1998,9 @@ function drawBoard() {
     );
 
 
-    if (player) {
+    if (
+        player
+    ) {
 
         drawGhost();
 
@@ -1380,9 +2011,12 @@ function drawBoard() {
                 row.forEach(
                     (value,x) => {
 
-                        if (value) {
+                        if (
+                            value
+                        ) {
 
                             drawBlock(
+
                                 ctx,
 
                                 (
@@ -1400,6 +2034,7 @@ function drawBoard() {
                                 BLOCK,
 
                                 player.color
+
                             );
 
                         }
@@ -1418,14 +2053,15 @@ function drawBoard() {
 }
 
 
-/* =========================================================
+/* =====================================================
    GRID
-========================================================= */
+===================================================== */
 
 function drawGrid() {
 
     ctx.strokeStyle =
         "rgba(255,255,255,.035)";
+
 
     ctx.lineWidth = 1;
 
@@ -1438,15 +2074,18 @@ function drawGrid() {
 
         ctx.beginPath();
 
+
         ctx.moveTo(
             x * BLOCK,
             0
         );
 
+
         ctx.lineTo(
             x * BLOCK,
             canvas.height
         );
+
 
         ctx.stroke();
 
@@ -1461,15 +2100,18 @@ function drawGrid() {
 
         ctx.beginPath();
 
+
         ctx.moveTo(
             0,
             y * BLOCK
         );
 
+
         ctx.lineTo(
             canvas.width,
             y * BLOCK
         );
+
 
         ctx.stroke();
 
@@ -1478,9 +2120,9 @@ function drawGrid() {
 }
 
 
-/* =========================================================
+/* =====================================================
    BLOCK
-========================================================= */
+===================================================== */
 
 function drawBlock(
     context,
@@ -1493,18 +2135,25 @@ function drawBlock(
     context.fillStyle =
         color;
 
+
     context.shadowColor =
         color;
+
 
     context.shadowBlur =
         12;
 
 
     context.fillRect(
+
         x + 2,
+
         y + 2,
+
         size - 4,
+
         size - 4
+
     );
 
 
@@ -1516,39 +2165,51 @@ function drawBlock(
 
 
     context.strokeRect(
+
         x + 3,
+
         y + 3,
+
         size - 6,
+
         size - 6
+
     );
 
 }
 
 
-/* =========================================================
+/* =====================================================
    GHOST
-========================================================= */
+===================================================== */
 
 function drawGhost() {
 
     const oldY =
         player.y;
 
+
     let ghostY =
         player.y;
 
 
-    while (true) {
+    while (
+        true
+    ) {
 
         player.y++;
 
-        if (collision()) {
+
+        if (
+            collision()
+        ) {
 
             player.y--;
 
             break;
 
         }
+
 
         ghostY =
             player.y;
@@ -1570,10 +2231,13 @@ function drawGhost() {
             row.forEach(
                 (value,x) => {
 
-                    if (value) {
+                    if (
+                        value
+                    ) {
 
                         ctx.fillStyle =
                             player.color;
+
 
                         ctx.fillRect(
 
@@ -1609,9 +2273,9 @@ function drawGhost() {
 }
 
 
-/* =========================================================
+/* =====================================================
    PREVIEWS
-========================================================= */
+===================================================== */
 
 function drawPreviews() {
 
@@ -1620,6 +2284,7 @@ function drawPreviews() {
         nextCanvas,
         nextPiece
     );
+
 
     drawPreview(
         holdCtx,
@@ -1644,7 +2309,9 @@ function drawPreview(
     );
 
 
-    if (!piece)
+    if (
+        !piece
+    )
         return;
 
 
@@ -1681,9 +2348,12 @@ function drawPreview(
             row.forEach(
                 (value,x) => {
 
-                    if (value) {
+                    if (
+                        value
+                    ) {
 
                         drawBlock(
+
                             context,
 
                             offsetX +
@@ -1695,6 +2365,7 @@ function drawPreview(
                             size,
 
                             piece.color
+
                         );
 
                     }
@@ -1708,9 +2379,9 @@ function drawPreview(
 }
 
 
-/* =========================================================
+/* =====================================================
    PARTICLES
-========================================================= */
+===================================================== */
 
 function createParticle(
     x,
@@ -1741,35 +2412,6 @@ function createParticle(
         color
 
     });
-
-}
-
-
-function createDropParticles() {
-
-    if (!player)
-        return;
-
-
-    for (
-        let i = 0;
-        i < 15;
-        i++
-    ) {
-
-        createParticle(
-
-            player.x *
-            BLOCK,
-
-            player.y *
-            BLOCK,
-
-            player.color
-
-        );
-
-    }
 
 }
 
@@ -1815,11 +2457,14 @@ function updateParticles() {
             particle.x +=
                 particle.vx;
 
+
             particle.y +=
                 particle.vy;
 
+
             particle.vy +=
                 .08;
+
 
             particle.life -=
                 .025;
@@ -1845,14 +2490,21 @@ function drawParticles() {
             ctx.globalAlpha =
                 particle.life;
 
+
             ctx.fillStyle =
                 particle.color;
 
+
             ctx.fillRect(
+
                 particle.x,
+
                 particle.y,
+
                 3,
+
                 3
+
             );
 
         }
@@ -1864,9 +2516,9 @@ function drawParticles() {
 }
 
 
-/* =========================================================
+/* =====================================================
    EFFECTS
-========================================================= */
+===================================================== */
 
 function showLevelUp() {
 
@@ -1874,7 +2526,9 @@ function showLevelUp() {
         "show"
     );
 
+
     void levelFlash.offsetWidth;
+
 
     levelFlash.classList.add(
         "show"
@@ -1888,11 +2542,14 @@ function showCombo() {
     comboFlash.textContent =
         `COMBO ×${combo}`;
 
+
     comboFlash.classList.remove(
         "show"
     );
 
+
     void comboFlash.offsetWidth;
+
 
     comboFlash.classList.add(
         "show"
@@ -1901,12 +2558,15 @@ function showCombo() {
 }
 
 
-function showScorePopup(points) {
+function showScorePopup(
+    points
+) {
 
     if (
         !points ||
         points <= 0
-    ) return;
+    )
+        return;
 
 
     scorePopup.textContent =
@@ -1917,7 +2577,9 @@ function showScorePopup(points) {
         "show"
     );
 
+
     void scorePopup.offsetWidth;
+
 
     scorePopup.classList.add(
         "show"
@@ -1926,131 +2588,45 @@ function showScorePopup(points) {
 }
 
 
-/* =========================================================
-   SOUND
-========================================================= */
-
-let audioContext = null;
-
-
-function playTone(
-    frequency,
-    duration
-) {
-
-    if (!soundEnabled)
-        return;
-
-
-    try {
-
-        if (!audioContext) {
-
-            audioContext =
-                new (
-                    window.AudioContext ||
-                    window.webkitAudioContext
-                )();
-
-        }
-
-
-        const oscillator =
-            audioContext
-                .createOscillator();
-
-
-        const gain =
-            audioContext
-                .createGain();
-
-
-        oscillator.frequency.value =
-            frequency;
-
-
-        oscillator.type =
-            "square";
-
-
-        gain.gain.value =
-            .04;
-
-
-        oscillator.connect(
-            gain
-        );
-
-
-        gain.connect(
-            audioContext.destination
-        );
-
-
-        oscillator.start();
-
-
-        oscillator.stop(
-            audioContext.currentTime +
-            duration
-        );
-
-    }
-    catch(error) {
-
-        console.log(
-            "Audio unavailable"
-        );
-
-    }
-
-}
-
-
-/* =========================================================
+/* =====================================================
    UI
-========================================================= */
+===================================================== */
 
 function updateUI() {
 
     scoreEl.textContent =
         score;
 
+
     bestEl.textContent =
         bestScore;
+
 
     levelEl.textContent =
         level;
 
+
     linesEl.textContent =
         lines;
 
+
     comboEl.textContent =
         combo;
+
 
     multiplierEl.textContent =
         `x${multiplier}`;
 
 
-    if (
+    timerEl.textContent =
         gameMode === "time"
-    ) {
-
-        timerEl.textContent =
-            `${Math.max(
+            ? `${Math.max(
                 0,
                 Math.ceil(
                     timeRemaining
                 )
-            )}s`;
-
-    }
-    else {
-
-        timerEl.textContent =
-            "∞";
-
-    }
+            )}s`
+            : "∞";
 
 
     updateMission();
@@ -2058,15 +2634,21 @@ function updateUI() {
 }
 
 
-/* =========================================================
-   START
-========================================================= */
+/* =====================================================
+   START GAME
+===================================================== */
 
 function startGame() {
 
     menuScreen.classList.remove(
         "active"
     );
+
+
+    profileScreen.classList.remove(
+        "active"
+    );
+
 
     gameScreen.classList.add(
         "active"
@@ -2125,28 +2707,20 @@ function startGame() {
     paused = false;
 
 
-    pauseOverlay.classList.remove(
-        "active"
-    );
-
-    gameOverOverlay.classList.remove(
-        "active"
-    );
-
-
     spawnPlayer();
 
 
     updateUI();
+
 
     startCountdown();
 
 }
 
 
-/* =========================================================
+/* =====================================================
    COUNTDOWN
-========================================================= */
+===================================================== */
 
 function startCountdown() {
 
@@ -2176,21 +2750,11 @@ function startCountdown() {
                     countdown.textContent =
                         count;
 
-                    playTone(
-                        350,
-                        .08
-                    );
-
                 }
                 else {
 
                     countdown.textContent =
                         "GO";
-
-                    playTone(
-                        800,
-                        .15
-                    );
 
 
                     setTimeout(
@@ -2218,13 +2782,15 @@ function startCountdown() {
 }
 
 
-/* =========================================================
+/* =====================================================
    PAUSE
-========================================================= */
+===================================================== */
 
 function togglePause() {
 
-    if (!running)
+    if (
+        !running
+    )
         return;
 
 
@@ -2240,26 +2806,92 @@ function togglePause() {
 }
 
 
-/* =========================================================
+/* =====================================================
+   STATISTICS
+===================================================== */
+
+function updateStatistics() {
+
+    statistics.games++;
+
+
+    statistics.totalScore +=
+        score;
+
+
+    statistics.totalLines +=
+        lines;
+
+
+    statistics.bestCombo =
+        Math.max(
+            statistics.bestCombo,
+            combo
+        );
+
+
+    statistics.highestLevel =
+        Math.max(
+            statistics.highestLevel,
+            level
+        );
+
+
+    localStorage.setItem(
+        "blockdrop_statistics",
+        JSON.stringify(
+            statistics
+        )
+    );
+
+}
+
+
+/* =====================================================
    END GAME
-========================================================= */
+===================================================== */
 
 function endGame() {
+
+    if (
+        !running
+    )
+        return;
+
 
     running = false;
 
     paused = false;
 
 
+    unlockAchievement(
+        "firstgame",
+        "FIRST DROP"
+    );
+
+
+    updateStatistics();
+
+
+    saveGameHistory();
+
+
+    const oldBest =
+        getBest(
+            gameMode
+        );
+
+
     if (
         score >
-        getBest(gameMode)
+        oldBest
     ) {
 
         saveBest(
             gameMode,
             score
         );
+
 
         unlockAchievement(
             "highscore",
@@ -2317,9 +2949,9 @@ function endGame() {
 }
 
 
-/* =========================================================
+/* =====================================================
    MENU
-========================================================= */
+===================================================== */
 
 function returnToMenu() {
 
@@ -2332,9 +2964,11 @@ function returnToMenu() {
         "active"
     );
 
+
     gameOverOverlay.classList.remove(
         "active"
     );
+
 
     startOverlay.classList.remove(
         "active"
@@ -2344,6 +2978,12 @@ function returnToMenu() {
     gameScreen.classList.remove(
         "active"
     );
+
+
+    profileScreen.classList.remove(
+        "active"
+    );
+
 
     menuScreen.classList.add(
         "active"
@@ -2357,9 +2997,9 @@ function returnToMenu() {
 }
 
 
-/* =========================================================
+/* =====================================================
    GAME LOOP
-========================================================= */
+===================================================== */
 
 function update(time = 0) {
 
@@ -2438,9 +3078,12 @@ function update(time = 0) {
 
     updateParticles();
 
+
     drawBoard();
 
+
     drawParticles();
+
 
     updateUI();
 
@@ -2452,9 +3095,9 @@ function update(time = 0) {
 }
 
 
-/* =========================================================
+/* =====================================================
    KEYBOARD
-========================================================= */
+===================================================== */
 
 document.addEventListener(
     "keydown",
@@ -2543,9 +3186,9 @@ document.addEventListener(
 );
 
 
-/* =========================================================
+/* =====================================================
    MODE
-========================================================= */
+===================================================== */
 
 document
     .querySelectorAll(
@@ -2585,9 +3228,9 @@ document
     );
 
 
-/* =========================================================
+/* =====================================================
    DIFFICULTY
-========================================================= */
+===================================================== */
 
 document
     .querySelectorAll(
@@ -2627,9 +3270,9 @@ document
     );
 
 
-/* =========================================================
+/* =====================================================
    BUTTONS
-========================================================= */
+===================================================== */
 
 document
     .getElementById(
@@ -2638,6 +3281,36 @@ document
     .addEventListener(
         "click",
         startGame
+    );
+
+
+document
+    .getElementById(
+        "profileBtn"
+    )
+    .addEventListener(
+        "click",
+        openProfile
+    );
+
+
+document
+    .getElementById(
+        "profileBackBtn"
+    )
+    .addEventListener(
+        "click",
+        closeProfile
+    );
+
+
+document
+    .getElementById(
+        "clearHistoryBtn"
+    )
+    .addEventListener(
+        "click",
+        clearHistory
     );
 
 
@@ -2714,9 +3387,9 @@ document
     );
 
 
-/* =========================================================
-   MOBILE
-========================================================= */
+/* =====================================================
+   MOBILE CONTROLS
+===================================================== */
 
 document
     .getElementById(
@@ -2770,9 +3443,9 @@ document
     );
 
 
-/* =========================================================
+/* =====================================================
    TOUCH
-========================================================= */
+===================================================== */
 
 let touchStartX = 0;
 
@@ -2786,8 +3459,10 @@ canvas.addEventListener(
         const touch =
             event.touches[0];
 
+
         touchStartX =
             touch.clientX;
+
 
         touchStartY =
             touch.clientY;
@@ -2862,9 +3537,9 @@ canvas.addEventListener(
 );
 
 
-/* =========================================================
-   INIT
-========================================================= */
+/* =====================================================
+   INITIALIZE
+===================================================== */
 
 updateMenuScores();
 

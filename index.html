@@ -25,7 +25,10 @@
 
 <div class="app">
 
-    <!-- ================= MENU ================= -->
+
+    <!-- =====================================================
+         MAIN MENU
+    ====================================================== -->
 
     <section
         id="menuScreen"
@@ -33,8 +36,6 @@
     >
 
         <div class="logo-area">
-
-            <div class="logo-glow"></div>
 
             <h1>
                 BLOCK<span>DROP</span>
@@ -141,7 +142,7 @@
             </button>
 
 
-            <!-- PLAYER PROFILE -->
+            <!-- PROFILE SUMMARY -->
 
             <div class="player-profile">
 
@@ -155,6 +156,7 @@
 
                 </div>
 
+
                 <div class="xp-bar">
 
                     <div
@@ -163,6 +165,7 @@
                     ></div>
 
                 </div>
+
 
                 <small id="xpText">
                     0 / 100 XP
@@ -183,6 +186,7 @@
 
                 </div>
 
+
                 <div>
 
                     <span>TIME</span>
@@ -192,6 +196,7 @@
                     </strong>
 
                 </div>
+
 
                 <div>
 
@@ -205,18 +210,279 @@
 
             </div>
 
+
+            <!-- PROFILE BUTTON -->
+
+            <button
+                id="profileBtn"
+                class="profile-button"
+            >
+                👤 PLAYER PROFILE
+            </button>
+
         </div>
 
 
         <footer>
-            BLOCKDROP // ARCADE PROTOCOL v7.0
+            BLOCKDROP // ARCADE PROTOCOL v8.0
         </footer>
 
     </section>
 
 
 
-    <!-- ================= GAME ================= -->
+    <!-- =====================================================
+         PROFILE SCREEN
+    ====================================================== -->
+
+    <section
+        id="profileScreen"
+        class="profile-screen"
+    >
+
+        <div class="profile-container">
+
+            <div class="profile-header">
+
+                <button
+                    id="profileBackBtn"
+                    class="back-btn"
+                >
+                    ← BACK
+                </button>
+
+                <div>
+
+                    <span class="profile-label">
+                        PLAYER DATABASE
+                    </span>
+
+                    <h2>
+                        PLAYER PROFILE
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <!-- PROFILE HERO -->
+
+            <div class="profile-hero">
+
+                <div class="avatar">
+
+                    <span>
+                        BD
+                    </span>
+
+                </div>
+
+
+                <div class="profile-info">
+
+                    <h1>
+                        BLOCKDROP PLAYER
+                    </h1>
+
+                    <p>
+                        ARCADE OPERATIVE
+                    </p>
+
+                    <div class="level-badge">
+
+                        LEVEL
+                        <strong id="profileLevel">
+                            1
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="profile-xp">
+
+                    <span>
+                        EXPERIENCE
+                    </span>
+
+                    <div class="large-xp-bar">
+
+                        <div
+                            id="profileXpFill"
+                            class="large-xp-fill"
+                        ></div>
+
+                    </div>
+
+                    <small id="profileXpText">
+                        0 / 100 XP
+                    </small>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- STATISTICS -->
+
+            <div class="section-title">
+
+                <span>
+                    PERFORMANCE
+                </span>
+
+                <h3>
+                    GAME STATISTICS
+                </h3>
+
+            </div>
+
+
+            <div class="statistics-grid">
+
+                <div class="big-stat">
+
+                    <span>
+                        TOTAL GAMES
+                    </span>
+
+                    <strong id="totalGames">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="big-stat">
+
+                    <span>
+                        TOTAL SCORE
+                    </span>
+
+                    <strong id="totalScore">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="big-stat">
+
+                    <span>
+                        TOTAL LINES
+                    </span>
+
+                    <strong id="totalLines">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="big-stat">
+
+                    <span>
+                        BEST SCORE
+                    </span>
+
+                    <strong id="profileBest">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="big-stat">
+
+                    <span>
+                        BEST COMBO
+                    </span>
+
+                    <strong id="bestCombo">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="big-stat">
+
+                    <span>
+                        HIGHEST LEVEL
+                    </span>
+
+                    <strong id="highestLevel">
+                        1
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ACHIEVEMENTS -->
+
+            <div class="section-title">
+
+                <span>
+                    COLLECTION
+                </span>
+
+                <h3>
+                    ACHIEVEMENTS
+                </h3>
+
+            </div>
+
+
+            <div
+                id="achievementGrid"
+                class="achievement-grid"
+            ></div>
+
+
+
+            <!-- GAME HISTORY -->
+
+            <div class="section-title">
+
+                <span>
+                    ACTIVITY
+                </span>
+
+                <h3>
+                    RECENT GAMES
+                </h3>
+
+            </div>
+
+
+            <div
+                id="gameHistory"
+                class="history-list"
+            ></div>
+
+
+            <button
+                id="clearHistoryBtn"
+                class="clear-history"
+            >
+                CLEAR GAME HISTORY
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         GAME SCREEN
+    ====================================================== -->
 
     <section
         id="gameScreen"
@@ -261,7 +527,7 @@
         <main class="game-layout">
 
 
-            <!-- LEFT -->
+            <!-- LEFT PANEL -->
 
             <aside class="side-panel left-panel">
 
@@ -345,7 +611,7 @@
 
 
 
-            <!-- CENTER -->
+            <!-- BOARD -->
 
             <section class="board-section">
 
@@ -426,10 +692,9 @@
 
 
 
-            <!-- RIGHT -->
+            <!-- RIGHT PANEL -->
 
             <aside class="side-panel right-panel">
-
 
                 <div class="piece-panel">
 
@@ -488,7 +753,7 @@
                     <span>MISSION</span>
 
                     <strong id="missionText">
-                        CLEAR 5 LINES
+                        CLEAR 5 MORE LINES
                     </strong>
 
                     <div class="mission-progress">
@@ -559,7 +824,7 @@
 
 
 
-        <!-- START -->
+        <!-- COUNTDOWN -->
 
         <div
             id="startOverlay"

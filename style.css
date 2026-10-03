@@ -8,7 +8,9 @@
 
     --bg: #050507;
 
-    --panel: rgba(15,15,20,.9);
+    --panel: rgba(15,15,20,.94);
+
+    --panel2: #101016;
 
     --border: rgba(255,255,255,.08);
 
@@ -18,9 +20,17 @@
 
     --green: #00ff88;
 
+    --yellow: #ffd600;
+
     --white: #ffffff;
 
     --muted: #777780;
+
+}
+
+html {
+
+    scroll-behavior: smooth;
 
 }
 
@@ -31,9 +41,9 @@ body {
     background:
 
         radial-gradient(
-            circle at 50% 15%,
-            rgba(255,23,68,.13),
-            transparent 32%
+            circle at 50% 10%,
+            rgba(255,23,68,.12),
+            transparent 30%
         ),
 
         #050507;
@@ -45,8 +55,6 @@ body {
         Segoe UI,
         Arial,
         sans-serif;
-
-    overflow-x: hidden;
 
 }
 
@@ -66,6 +74,8 @@ button {
 
     pointer-events: none;
 
+    z-index: -1;
+
     background-image:
 
         linear-gradient(
@@ -81,27 +91,12 @@ button {
 
     background-size: 50px 50px;
 
-    animation:
-        gridMove 12s linear infinite;
-
-    z-index: -1;
-
-}
-
-@keyframes gridMove {
-
-    from {
-        background-position: 0 0;
-    }
-
-    to {
-        background-position: 50px 50px;
-    }
-
 }
 
 
-/* ================= MENU ================= */
+/* =====================================================
+   COMMON
+===================================================== */
 
 .screen {
 
@@ -117,6 +112,11 @@ button {
 
 }
 
+
+/* =====================================================
+   MENU
+===================================================== */
+
 #menuScreen {
 
     min-height: 100vh;
@@ -125,9 +125,9 @@ button {
 
     flex-direction: column;
 
-    align-items: center;
-
     justify-content: center;
+
+    align-items: center;
 
     padding: 30px 20px;
 
@@ -152,13 +152,9 @@ button {
     font-size:
         clamp(3.5rem,9vw,7rem);
 
-    letter-spacing: -5px;
-
     font-weight: 900;
 
-    text-shadow:
-        0 0 20px rgba(255,23,68,.35),
-        0 0 60px rgba(255,23,68,.15);
+    letter-spacing: -5px;
 
 }
 
@@ -172,11 +168,11 @@ button {
 
     margin-top: 5px;
 
+    color: #777;
+
     font-size: .8rem;
 
     letter-spacing: 6px;
-
-    color: var(--muted);
 
 }
 
@@ -184,11 +180,11 @@ button {
 
     margin-top: 18px;
 
-    font-size: .7rem;
+    color: #888;
+
+    font-size: .65rem;
 
     letter-spacing: 3px;
-
-    color: #aaa;
 
 }
 
@@ -204,26 +200,12 @@ button {
 
     border-radius: 50%;
 
-    background: #00ff88;
+    background: var(--green);
 
     box-shadow:
-        0 0 10px #00ff88;
-
-    animation:
-        blink 1.2s infinite;
+        0 0 12px var(--green);
 
 }
-
-@keyframes blink {
-
-    50% {
-        opacity: .3;
-    }
-
-}
-
-
-/* ================= MENU PANEL ================= */
 
 .menu-panel {
 
@@ -231,19 +213,19 @@ button {
 
     padding: 28px;
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(25,25,32,.97),
-            rgba(8,8,12,.97)
-        );
-
     border: 1px solid var(--border);
 
     border-radius: 18px;
 
+    background:
+        linear-gradient(
+            145deg,
+            rgba(25,25,32,.98),
+            rgba(8,8,12,.98)
+        );
+
     box-shadow:
-        0 30px 80px rgba(0,0,0,.6);
+        0 30px 90px rgba(0,0,0,.65);
 
 }
 
@@ -251,11 +233,11 @@ button {
 
     margin-bottom: 12px;
 
-    font-size: .7rem;
+    color: #777;
+
+    font-size: .65rem;
 
     letter-spacing: 3px;
-
-    color: #888;
 
 }
 
@@ -277,14 +259,18 @@ button {
 
     border: 1px solid var(--border);
 
+    border-radius: 10px;
+
     background:
         rgba(255,255,255,.025);
 
     color: white;
 
-    border-radius: 10px;
-
     transition: .2s;
+
+}
+
+.mode-btn {
 
     padding: 15px 10px;
 
@@ -304,9 +290,9 @@ button {
 
     margin-top: 5px;
 
-    color: #777;
+    color: #666;
 
-    font-size: .65rem;
+    font-size: .62rem;
 
 }
 
@@ -314,7 +300,7 @@ button {
 .difficulty-btn:hover {
 
     border-color:
-        rgba(255,23,68,.5);
+        rgba(255,23,68,.6);
 
     transform:
         translateY(-2px);
@@ -324,15 +310,11 @@ button {
 .mode-btn.selected,
 .difficulty-btn.selected {
 
-    background:
-        rgba(255,23,68,.12);
-
     border-color:
         var(--red);
 
-    box-shadow:
-        0 0 20px
-        rgba(255,23,68,.12);
+    background:
+        rgba(255,23,68,.11);
 
 }
 
@@ -353,22 +335,24 @@ button {
 
     padding: 12px;
 
-    font-size: .7rem;
+    font-size: .65rem;
 
     letter-spacing: 1px;
 
 }
 
 
-/* ================= BUTTONS ================= */
+/* =====================================================
+   BUTTONS
+===================================================== */
 
 .primary-btn {
 
     width: 100%;
 
-    border: none;
-
     padding: 15px;
+
+    border: none;
 
     border-radius: 9px;
 
@@ -406,9 +390,9 @@ button {
 
     padding: 14px;
 
-    border-radius: 9px;
-
     border: 1px solid var(--border);
+
+    border-radius: 9px;
 
     background:
         rgba(255,255,255,.04);
@@ -418,7 +402,9 @@ button {
 }
 
 
-/* ================= PLAYER PROFILE ================= */
+/* =====================================================
+   PLAYER SUMMARY
+===================================================== */
 
 .player-profile {
 
@@ -457,39 +443,34 @@ button {
 
     color: var(--red);
 
-    font-size: 1.2rem;
-
 }
 
 .xp-bar {
 
-    width: 100%;
-
     height: 5px;
 
-    background: #18181e;
+    overflow: hidden;
 
     border-radius: 20px;
 
-    overflow: hidden;
+    background: #1b1b22;
 
 }
 
 .xp-fill {
 
-    height: 100%;
-
     width: 0%;
+
+    height: 100%;
 
     background:
         linear-gradient(
             90deg,
             var(--red),
-            #ff7a95
+            #ff8ca2
         );
 
-    transition:
-        width .4s ease;
+    transition: .4s;
 
 }
 
@@ -504,9 +485,6 @@ button {
     font-size: .55rem;
 
 }
-
-
-/* ================= SCORES ================= */
 
 .best-scores {
 
@@ -536,7 +514,7 @@ button {
 
     color: #666;
 
-    font-size: .6rem;
+    font-size: .55rem;
 
 }
 
@@ -544,7 +522,31 @@ button {
 
     display: block;
 
-    margin-top: 4px;
+    margin-top: 5px;
+
+}
+
+.profile-button {
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    padding: 13px;
+
+    border: 1px solid
+        rgba(255,23,68,.3);
+
+    border-radius: 9px;
+
+    background:
+        rgba(255,23,68,.06);
+
+    color: white;
+
+    letter-spacing: 1px;
+
+    font-size: .7rem;
 
 }
 
@@ -552,7 +554,7 @@ button {
 
     margin-top: 25px;
 
-    color: #555;
+    color: #444;
 
     font-size: .55rem;
 
@@ -561,15 +563,487 @@ button {
 }
 
 
-/* ================= GAME ================= */
+/* =====================================================
+   PROFILE SCREEN
+===================================================== */
+
+.profile-screen {
+
+    min-height: 100vh;
+
+    padding: 30px 20px 70px;
+
+    display: none;
+
+}
+
+.profile-screen.active {
+
+    display: block;
+
+}
+
+.profile-container {
+
+    width: min(1100px,100%);
+
+    margin: auto;
+
+}
+
+.profile-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 25px;
+
+    margin-bottom: 25px;
+
+}
+
+.back-btn {
+
+    padding: 10px 15px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 8px;
+
+    background:
+        rgba(255,255,255,.04);
+
+    color: white;
+
+}
+
+.profile-label {
+
+    color: var(--red);
+
+    font-size: .55rem;
+
+    letter-spacing: 3px;
+
+}
+
+.profile-header h2 {
+
+    margin-top: 5px;
+
+    font-size: 2rem;
+
+}
+
+
+/* =====================================================
+   PROFILE HERO
+===================================================== */
+
+.profile-hero {
+
+    display: grid;
+
+    grid-template-columns:
+        auto 1fr 300px;
+
+    align-items: center;
+
+    gap: 25px;
+
+    padding: 28px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(25,25,32,.95),
+            rgba(8,8,12,.95)
+        );
+
+}
+
+.avatar {
+
+    width: 90px;
+
+    height: 90px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    border-radius: 50%;
+
+    border:
+        1px solid
+        rgba(255,23,68,.6);
+
+    background:
+        rgba(255,23,68,.1);
+
+    box-shadow:
+        0 0 35px
+        rgba(255,23,68,.15);
+
+}
+
+.avatar span {
+
+    color: var(--red);
+
+    font-weight: 900;
+
+    font-size: 1.4rem;
+
+}
+
+.profile-info h1 {
+
+    font-size: 1.2rem;
+
+}
+
+.profile-info p {
+
+    margin-top: 5px;
+
+    color: #666;
+
+    font-size: .6rem;
+
+    letter-spacing: 2px;
+
+}
+
+.level-badge {
+
+    display: inline-flex;
+
+    gap: 8px;
+
+    margin-top: 12px;
+
+    padding: 7px 10px;
+
+    border-radius: 6px;
+
+    background:
+        rgba(255,23,68,.1);
+
+    color: #777;
+
+    font-size: .55rem;
+
+}
+
+.level-badge strong {
+
+    color: var(--red);
+
+}
+
+.profile-xp span {
+
+    color: #666;
+
+    font-size: .55rem;
+
+    letter-spacing: 2px;
+
+}
+
+.large-xp-bar {
+
+    height: 8px;
+
+    margin-top: 10px;
+
+    overflow: hidden;
+
+    border-radius: 20px;
+
+    background: #1c1c22;
+
+}
+
+.large-xp-fill {
+
+    width: 0%;
+
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--red),
+            #ff8da4
+        );
+
+    transition: .5s;
+
+}
+
+.profile-xp small {
+
+    display: block;
+
+    margin-top: 6px;
+
+    color: #555;
+
+}
+
+
+/* =====================================================
+   SECTION
+===================================================== */
+
+.section-title {
+
+    margin:
+        35px 0 15px;
+
+}
+
+.section-title span {
+
+    color: var(--red);
+
+    font-size: .55rem;
+
+    letter-spacing: 3px;
+
+}
+
+.section-title h3 {
+
+    margin-top: 5px;
+
+    font-size: 1.3rem;
+
+}
+
+
+/* =====================================================
+   STATISTICS
+===================================================== */
+
+.statistics-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    gap: 12px;
+
+}
+
+.big-stat {
+
+    padding: 22px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    background:
+        rgba(255,255,255,.025);
+
+}
+
+.big-stat span {
+
+    display: block;
+
+    color: #666;
+
+    font-size: .55rem;
+
+    letter-spacing: 2px;
+
+}
+
+.big-stat strong {
+
+    display: block;
+
+    margin-top: 10px;
+
+    font-size: 1.5rem;
+
+}
+
+
+/* =====================================================
+   ACHIEVEMENTS
+===================================================== */
+
+.achievement-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap: 12px;
+
+}
+
+.achievement-card {
+
+    min-height: 120px;
+
+    padding: 18px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    background:
+        rgba(255,255,255,.025);
+
+    transition: .2s;
+
+}
+
+.achievement-card.unlocked {
+
+    border-color:
+        rgba(255,23,68,.45);
+
+    background:
+        rgba(255,23,68,.07);
+
+}
+
+.achievement-icon {
+
+    font-size: 1.6rem;
+
+}
+
+.achievement-card h4 {
+
+    margin-top: 10px;
+
+    font-size: .7rem;
+
+}
+
+.achievement-card p {
+
+    margin-top: 5px;
+
+    color: #666;
+
+    font-size: .55rem;
+
+}
+
+.achievement-card.locked {
+
+    opacity: .35;
+
+    filter: grayscale(1);
+
+}
+
+
+/* =====================================================
+   HISTORY
+===================================================== */
+
+.history-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+}
+
+.history-row {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr 1fr 1fr;
+
+    align-items: center;
+
+    padding: 15px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 9px;
+
+    background:
+        rgba(255,255,255,.025);
+
+}
+
+.history-row span {
+
+    color: #666;
+
+    font-size: .55rem;
+
+}
+
+.history-row strong {
+
+    font-size: .7rem;
+
+}
+
+.history-score {
+
+    color: var(--red);
+
+}
+
+.clear-history {
+
+    margin-top: 15px;
+
+    padding: 10px 15px;
+
+    border: 1px solid
+        rgba(255,23,68,.3);
+
+    border-radius: 7px;
+
+    background:
+        transparent;
+
+    color: #888;
+
+    font-size: .6rem;
+
+}
+
+
+/* =====================================================
+   GAME
+===================================================== */
 
 #gameScreen {
 
     position: relative;
 
-    padding: 18px;
+    min-height: 100vh;
 
-    overflow: hidden;
+    padding: 18px;
 
 }
 
@@ -623,22 +1097,23 @@ button {
 
 .header-actions button {
 
-    border:
-        1px solid var(--border);
+    padding: 8px 12px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 7px;
 
     background:
         rgba(255,255,255,.04);
 
     color: white;
 
-    padding: 8px 12px;
-
-    border-radius: 7px;
-
 }
 
 
-/* ================= LAYOUT ================= */
+/* =====================================================
+   GAME LAYOUT
+===================================================== */
 
 .game-layout {
 
@@ -674,19 +1149,18 @@ button {
 .system-panel,
 .mission-panel {
 
+    padding: 14px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 10px;
+
     background:
         linear-gradient(
             145deg,
             rgba(20,20,27,.92),
             rgba(10,10,14,.92)
         );
-
-    border:
-        1px solid var(--border);
-
-    border-radius: 10px;
-
-    padding: 14px;
 
 }
 
@@ -722,12 +1196,9 @@ button {
 
 .multiplier-card strong {
 
-    color: #ffcc00;
+    color: var(--yellow);
 
 }
-
-
-/* ================= BOARD ================= */
 
 .board-section {
 
@@ -745,17 +1216,16 @@ button {
 
     padding: 7px;
 
+    border: 1px solid rgba(255,255,255,.1);
+
+    border-radius: 12px;
+
     background:
         linear-gradient(
             145deg,
             #1c1c23,
             #08080b
         );
-
-    border:
-        1px solid rgba(255,255,255,.1);
-
-    border-radius: 12px;
 
     box-shadow:
         0 25px 70px rgba(0,0,0,.7);
@@ -770,14 +1240,129 @@ button {
 
     height: 600px;
 
+    border-radius: 6px;
+
     background: #050508;
 
+}
+
+.piece-panel h3 {
+
+    margin-bottom: 10px;
+
+    color: #777;
+
+    font-size: .6rem;
+
+    letter-spacing: 3px;
+
+}
+
+.piece-frame {
+
+    min-height: 120px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
     border-radius: 6px;
+
+    background:
+        rgba(255,255,255,.02);
+
+}
+
+.mission-panel strong,
+.system-panel strong {
+
+    display: block;
+
+    margin-top: 7px;
+
+    font-size: .7rem;
+
+}
+
+.mission-progress {
+
+    height: 5px;
+
+    margin-top: 10px;
+
+    overflow: hidden;
+
+    border-radius: 20px;
+
+    background: #19191f;
+
+}
+
+.mission-fill {
+
+    width: 0%;
+
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--red),
+            #ff8299
+        );
+
+    transition: .3s;
 
 }
 
 
-/* ================= EFFECTS ================= */
+/* =====================================================
+   CONTROLS
+===================================================== */
+
+.controls {
+
+    width: 300px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(5,1fr);
+
+    gap: 7px;
+
+    margin-top: 12px;
+
+}
+
+.controls button {
+
+    height: 42px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 7px;
+
+    background:
+        rgba(255,255,255,.05);
+
+    color: white;
+
+}
+
+.controls button:active {
+
+    background:
+        var(--red);
+
+}
+
+
+/* =====================================================
+   EFFECTS
+===================================================== */
 
 .level-flash,
 .combo-flash,
@@ -791,11 +1376,11 @@ button {
     transform:
         translate(-50%,-50%);
 
+    z-index: 20;
+
     pointer-events: none;
 
     opacity: 0;
-
-    z-index: 20;
 
     font-weight: 900;
 
@@ -818,7 +1403,7 @@ button {
 
     top: 48%;
 
-    color: #ffcc00;
+    color: var(--yellow);
 
 }
 
@@ -837,8 +1422,6 @@ button {
 .score-popup {
 
     top: 55%;
-
-    color: white;
 
     font-size: 1.4rem;
 
@@ -891,13 +1474,13 @@ button {
 
     inset: 0;
 
-    background: white;
-
-    opacity: 0;
+    z-index: 8;
 
     pointer-events: none;
 
-    z-index: 8;
+    background: white;
+
+    opacity: 0;
 
 }
 
@@ -925,153 +1508,9 @@ button {
 }
 
 
-/* ================= MISSION ================= */
-
-.mission-panel strong {
-
-    display: block;
-
-    margin-top: 7px;
-
-    color: white;
-
-    font-size: .7rem;
-
-}
-
-.mission-progress {
-
-    height: 5px;
-
-    margin-top: 10px;
-
-    background: #19191f;
-
-    border-radius: 20px;
-
-    overflow: hidden;
-
-}
-
-.mission-fill {
-
-    width: 0%;
-
-    height: 100%;
-
-    background:
-        linear-gradient(
-            90deg,
-            var(--red),
-            #ff8299
-        );
-
-    transition:
-        width .3s ease;
-
-}
-
-
-/* ================= PIECES ================= */
-
-.piece-panel h3 {
-
-    margin-bottom: 10px;
-
-    color: #777;
-
-    font-size: .6rem;
-
-    letter-spacing: 3px;
-
-}
-
-.piece-frame {
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    min-height: 120px;
-
-    background:
-        rgba(255,255,255,.02);
-
-    border-radius: 6px;
-
-}
-
-
-/* ================= CONTROLS ================= */
-
-.controls {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(5,1fr);
-
-    gap: 7px;
-
-    width: 300px;
-
-    margin-top: 12px;
-
-}
-
-.controls button {
-
-    height: 42px;
-
-    border:
-        1px solid var(--border);
-
-    background:
-        rgba(255,255,255,.05);
-
-    color: white;
-
-    border-radius: 7px;
-
-}
-
-.controls button:active {
-
-    background:
-        var(--red);
-
-    transform:
-        scale(.94);
-
-}
-
-
-/* ================= HINTS ================= */
-
-.game-hints {
-
-    max-width: 900px;
-
-    margin: 15px auto 0;
-
-    display: flex;
-
-    justify-content: center;
-
-    gap: 18px;
-
-    color: #555;
-
-    font-size: .52rem;
-
-    letter-spacing: 1px;
-
-}
-
-
-/* ================= OVERLAY ================= */
+/* =====================================================
+   OVERLAY
+===================================================== */
 
 .overlay {
 
@@ -1079,19 +1518,19 @@ button {
 
     inset: 0;
 
+    z-index: 100;
+
     display: none;
 
-    align-items: center;
-
     justify-content: center;
+
+    align-items: center;
 
     background:
         rgba(0,0,0,.75);
 
     backdrop-filter:
         blur(8px);
-
-    z-index: 100;
 
 }
 
@@ -1110,6 +1549,10 @@ button {
 
     text-align: center;
 
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
     background:
         linear-gradient(
             145deg,
@@ -1117,26 +1560,19 @@ button {
             #08080b
         );
 
-    border:
-        1px solid var(--border);
-
-    border-radius: 16px;
-
-    box-shadow:
-        0 30px 100px
-        rgba(0,0,0,.8);
-
 }
 
 .overlay-icon {
 
-    font-size: 3rem;
-
     color: var(--red);
+
+    font-size: 3rem;
 
 }
 
 .overlay-box h2 {
+
+    margin-top: 5px;
 
     font-size: 2rem;
 
@@ -1151,8 +1587,6 @@ button {
     color: #777;
 
     font-size: .65rem;
-
-    letter-spacing: 2px;
 
 }
 
@@ -1178,9 +1612,9 @@ button {
 
     margin-top: 10px;
 
-    font-size: 7rem;
-
     color: var(--red);
+
+    font-size: 7rem;
 
 }
 
@@ -1191,8 +1625,6 @@ button {
     font-size: .6rem;
 
     letter-spacing: 4px;
-
-    margin-bottom: 8px;
 
 }
 
@@ -1213,10 +1645,10 @@ button {
 
     padding: 12px;
 
+    border-radius: 8px;
+
     background:
         rgba(255,255,255,.03);
-
-    border-radius: 8px;
 
 }
 
@@ -1248,8 +1680,6 @@ button {
 
     font-size: .65rem;
 
-    letter-spacing: 2px;
-
 }
 
 .overlay-buttons {
@@ -1260,8 +1690,28 @@ button {
 
 }
 
+.game-hints {
 
-/* ================= RESPONSIVE ================= */
+    max-width: 900px;
+
+    margin: 15px auto 0;
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 18px;
+
+    color: #555;
+
+    font-size: .52rem;
+
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
 
 @media(max-width:850px) {
 
@@ -1300,9 +1750,51 @@ button {
 
     }
 
-    .game-hints {
+    .profile-hero {
 
-        display: none;
+        grid-template-columns:
+            1fr;
+
+        text-align: center;
+
+    }
+
+    .avatar {
+
+        margin: auto;
+
+    }
+
+    .achievement-grid {
+
+        grid-template-columns:
+            repeat(2,1fr);
+
+    }
+
+}
+
+@media(max-width:600px) {
+
+    .statistics-grid {
+
+        grid-template-columns:
+            repeat(2,1fr);
+
+    }
+
+    .profile-header h2 {
+
+        font-size: 1.3rem;
+
+    }
+
+    .history-row {
+
+        grid-template-columns:
+            repeat(2,1fr);
+
+        gap: 10px;
 
     }
 
@@ -1310,15 +1802,10 @@ button {
 
 @media(max-width:500px) {
 
-    #gameScreen {
+    .mode-grid {
 
-        padding: 10px;
-
-    }
-
-    .header-center {
-
-        display: none;
+        grid-template-columns:
+            1fr;
 
     }
 
@@ -1343,16 +1830,9 @@ button {
 
     }
 
-    .mode-grid {
+    .game-hints {
 
-        grid-template-columns:
-            1fr;
-
-    }
-
-    .logo-area h1 {
-
-        letter-spacing: -3px;
+        display: none;
 
     }
 
