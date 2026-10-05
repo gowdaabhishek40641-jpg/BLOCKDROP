@@ -1,616 +1,247 @@
-const canvas =
-    document.getElementById("gameCanvas");
-
-const ctx =
-    canvas.getContext("2d");
-
-const nextCanvas =
-    document.getElementById("nextCanvas");
-
-const nextCtx =
-    nextCanvas.getContext("2d");
-
-const holdCanvas =
-    document.getElementById("holdCanvas");
-
-const holdCtx =
-    holdCanvas.getContext("2d");
-
-
-/* =====================================================
-   CONFIG
-===================================================== */
-
-const COLS = 10;
+/* =========================================================
+   BLOCKDROP
+   Commit 7
+   Achievements + Statistics + Settings
+========================================================= */
 
 const ROWS = 20;
+const COLS = 10;
 
-const BLOCK = 30;
 
+/* =========================================================
+   DOM
+========================================================= */
+
+const menuScreen = document.getElementById("menuScreen");
+const gameScreen = document.getElementById("gameScreen");
+
+const gameBoard = document.getElementById("gameBoard");
+
+const scoreEl = document.getElementById("score");
+const levelEl = document.getElementById("level");
+const linesEl = document.getElementById("lines");
+const comboEl = document.getElementById("combo");
+const timerEl = document.getElementById("timer");
+
+const nextPieceEl = document.getElementById("nextPiece");
+const holdPieceEl = document.getElementById("holdPiece");
+
+const modeLabel = document.getElementById("modeLabel");
+const difficultyLabel = document.getElementById("difficultyLabel");
+
+const gameOverOverlay = document.getElementById("gameOverOverlay");
+const pauseOverlay = document.getElementById("pauseOverlay");
+const countdownOverlay = document.getElementById("countdownOverlay");
+
+const settingsOverlay = document.getElementById("settingsOverlay");
+const achievementToast = document.getElementById("achievementToast");
+
+const lineFlash = document.getElementById("lineFlash");
+const messageEl = document.getElementById("message");
+
+
+/* =========================================================
+   PIECES
+========================================================= */
+
+const PIECES = {
+
+    I: {
+        color: "#49eaff",
+        shape: [
+            [1,1,1,1]
+        ]
+    },
+
+    O: {
+        color: "#ffd95a",
+        shape: [
+            [1,1],
+            [1,1]
+        ]
+    },
+
+    T: {
+        color: "#9b6cff",
+        shape: [
+            [0,1,0],
+            [1,1,1]
+        ]
+    },
+
+    S: {
+        color: "#53f5a5",
+        shape: [
+            [0,1,1],
+            [1,1,0]
+        ]
+    },
+
+    Z: {
+        color: "#ff5577",
+        shape: [
+            [1,1,0],
+            [0,1,1]
+        ]
+    },
+
+    J: {
+        color: "#5c8cff",
+        shape: [
+            [1,0,0],
+            [1,1,1]
+        ]
+    },
+
+    L: {
+        color: "#ff9c55",
+        shape: [
+            [0,0,1],
+            [1,1,1]
+        ]
+    }
+
+};
+
+const PIECE_KEYS = Object.keys(PIECES);
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
 
 let board = [];
 
-let player = null;
-
+let currentPiece = null;
 let nextPiece = null;
-
 let holdPiece = null;
 
 let canHold = true;
 
-
 let score = 0;
-
-let bestScore = 0;
-
 let level = 1;
-
 let lines = 0;
-
 let combo = 0;
-
-let multiplier = 1;
-
+let bestComboSession = 0;
 
 let gameMode = "classic";
-
 let difficulty = "normal";
 
-
-let running = false;
-
+let gameRunning = false;
 let paused = false;
 
-let soundEnabled = true;
+let dropTimer = null;
+let timeTimer = null;
 
-
-let dropCounter = 0;
-
-let lastTime = 0;
-
-let dropInterval = 800;
-
-
-let timeRemaining = 60;
-
-
-let shakeAmount = 0;
-
-let particles = [];
+let timeRemaining = 0;
 
 let clearingRows = [];
+let clearTimer = null;
 
-let clearTimer = 0;
 
+/* =========================================================
+   SETTINGS
+========================================================= */
 
-/* =====================================================
-   PLAYER DATA
-===================================================== */
+let settings = JSON.parse(
+    localStorage.getItem("blockdropSettings")
+) || {
 
-let playerXP =
-    Number(
-        localStorage.getItem(
-            "blockdrop_xp"
-        ) || 0
+    sound: true,
+    shake: true,
+    reducedMotion: false
+
+};
+
+function saveSettings() {
+
+    localStorage.setItem(
+        "blockdropSettings",
+        JSON.stringify(settings)
     );
 
+}
 
-let playerLevel =
-    Number(
-        localStorage.getItem(
-            "blockdrop_player_level"
-        ) || 1
+
+/* =========================================================
+   GLOBAL STATISTICS
+========================================================= */
+
+let statistics = JSON.parse(
+    localStorage.getItem("blockdropStatistics")
+) || {
+
+    totalGames: 0,
+    totalScore: 0,
+    totalLines: 0,
+    bestCombo: 0,
+    perfectClears: 0
+
+};
+
+function saveStatistics() {
+
+    localStorage.setItem(
+        "blockdropStatistics",
+        JSON.stringify(statistics)
     );
 
-
-let achievements =
-    JSON.parse(
-        localStorage.getItem(
-            "blockdrop_achievements"
-        ) || "[]"
-    );
+}
 
 
-let gameHistory =
-    JSON.parse(
-        localStorage.getItem(
-            "blockdrop_history"
-        ) || "[]"
-    );
+/* =========================================================
+   ACHIEVEMENTS
+========================================================= */
 
+const ACHIEVEMENTS = {
 
-let statistics =
-    JSON.parse(
-        localStorage.getItem(
-            "blockdrop_statistics"
-        ) ||
-        JSON.stringify({
-
-            games: 0,
-
-            totalScore: 0,
-
-            totalLines: 0,
-
-            bestCombo: 0,
-
-            highestLevel: 1
-
-        })
-    );
-
-
-/* =====================================================
-   ACHIEVEMENT DATABASE
-===================================================== */
-
-const ACHIEVEMENT_DATA = [
-
-    {
-        id: "firstgame",
-        icon: "▶",
+    FIRST_DROP: {
         title: "FIRST DROP",
-        description: "Complete your first game."
+        description: "Start your first game."
     },
 
-    {
-        id: "tetris",
-        icon: "◆",
-        title: "TETRIS CLEAR",
-        description: "Clear four lines at once."
-    },
-
-    {
-        id: "combo3",
-        icon: "🔥",
-        title: "3X COMBO",
-        description: "Reach a 3x combo."
-    },
-
-    {
-        id: "combo5",
-        icon: "⚡",
-        title: "5X COMBO",
+    COMBO_5: {
+        title: "COMBO MASTER",
         description: "Reach a 5x combo."
     },
 
-    {
-        id: "perfect",
-        icon: "★",
+    LINE_MASTER: {
+        title: "LINE MASTER",
+        description: "Clear 100 lines."
+    },
+
+    SCORE_10K: {
+        title: "10K CLUB",
+        description: "Reach 10,000 points."
+    },
+
+    PERFECT_CLEAR: {
         title: "PERFECT CLEAR",
         description: "Clear the entire board."
-    },
-
-    {
-        id: "mission",
-        icon: "✓",
-        title: "MISSION COMPLETE",
-        description: "Complete a line mission."
-    },
-
-    {
-        id: "highscore",
-        icon: "🏆",
-        title: "NEW HIGH SCORE",
-        description: "Set a new personal record."
-    },
-
-    {
-        id: "survivor20",
-        icon: "♜",
-        title: "20 LINE SURVIVOR",
-        description: "Clear 20 lines in one game."
     }
 
-];
+};
 
+let unlockedAchievements = JSON.parse(
+    localStorage.getItem("blockdropAchievements")
+) || {};
 
-/* =====================================================
-   MISSION
-===================================================== */
 
-let missionTarget = 5;
+function unlockAchievement(id) {
 
-let missionStartLines = 0;
-
-
-/* =====================================================
-   PIECES
-===================================================== */
-
-const PIECES = [
-
-    {
-        name: "I",
-
-        matrix: [
-            [1,1,1,1]
-        ],
-
-        color: "#00e5ff"
-    },
-
-    {
-        name: "O",
-
-        matrix: [
-            [1,1],
-            [1,1]
-        ],
-
-        color: "#ffe600"
-    },
-
-    {
-        name: "T",
-
-        matrix: [
-            [0,1,0],
-            [1,1,1]
-        ],
-
-        color: "#b000ff"
-    },
-
-    {
-        name: "S",
-
-        matrix: [
-            [0,1,1],
-            [1,1,0]
-        ],
-
-        color: "#00ff88"
-    },
-
-    {
-        name: "Z",
-
-        matrix: [
-            [1,1,0],
-            [0,1,1]
-        ],
-
-        color: "#ff1744"
-    },
-
-    {
-        name: "J",
-
-        matrix: [
-            [1,0,0],
-            [1,1,1]
-        ],
-
-        color: "#2979ff"
-    },
-
-    {
-        name: "L",
-
-        matrix: [
-            [0,0,1],
-            [1,1,1]
-        ],
-
-        color: "#ff8a00"
-    }
-
-];
-
-
-/* =====================================================
-   DOM
-===================================================== */
-
-const menuScreen =
-    document.getElementById(
-        "menuScreen"
-    );
-
-
-const gameScreen =
-    document.getElementById(
-        "gameScreen"
-    );
-
-
-const profileScreen =
-    document.getElementById(
-        "profileScreen"
-    );
-
-
-const pauseOverlay =
-    document.getElementById(
-        "pauseOverlay"
-    );
-
-
-const startOverlay =
-    document.getElementById(
-        "startOverlay"
-    );
-
-
-const gameOverOverlay =
-    document.getElementById(
-        "gameOverOverlay"
-    );
-
-
-const countdown =
-    document.getElementById(
-        "countdown"
-    );
-
-
-const scoreEl =
-    document.getElementById(
-        "score"
-    );
-
-
-const bestEl =
-    document.getElementById(
-        "best"
-    );
-
-
-const levelEl =
-    document.getElementById(
-        "level"
-    );
-
-
-const linesEl =
-    document.getElementById(
-        "lines"
-    );
-
-
-const comboEl =
-    document.getElementById(
-        "combo"
-    );
-
-
-const multiplierEl =
-    document.getElementById(
-        "multiplier"
-    );
-
-
-const timerEl =
-    document.getElementById(
-        "timer"
-    );
-
-
-const playerLevelEl =
-    document.getElementById(
-        "playerLevel"
-    );
-
-
-const xpFill =
-    document.getElementById(
-        "xpFill"
-    );
-
-
-const xpText =
-    document.getElementById(
-        "xpText"
-    );
-
-
-const missionText =
-    document.getElementById(
-        "missionText"
-    );
-
-
-const missionFill =
-    document.getElementById(
-        "missionFill"
-    );
-
-
-const levelFlash =
-    document.getElementById(
-        "levelFlash"
-    );
-
-
-const comboFlash =
-    document.getElementById(
-        "comboFlash"
-    );
-
-
-const achievementFlash =
-    document.getElementById(
-        "achievementFlash"
-    );
-
-
-const scorePopup =
-    document.getElementById(
-        "scorePopup"
-    );
-
-
-const clearFlash =
-    document.getElementById(
-        "clearFlash"
-    );
-
-
-/* =====================================================
-   BEST SCORE
-===================================================== */
-
-function getBest(mode) {
-
-    return Number(
-        localStorage.getItem(
-            `blockdrop_best_${mode}`
-        ) || 0
-    );
-
-}
-
-
-function saveBest(
-    mode,
-    value
-) {
-
-    localStorage.setItem(
-        `blockdrop_best_${mode}`,
-        value
-    );
-
-}
-
-
-function updateMenuScores() {
-
-    document.getElementById(
-        "classicBest"
-    ).textContent =
-        getBest("classic");
-
-
-    document.getElementById(
-        "timeBest"
-    ).textContent =
-        getBest("time");
-
-
-    document.getElementById(
-        "endlessBest"
-    ).textContent =
-        getBest("endless");
-
-}
-
-
-/* =====================================================
-   PROFILE XP
-===================================================== */
-
-function updateProfileUI() {
-
-    const requiredXP =
-        playerLevel * 100;
-
-
-    const percent =
-        Math.min(
-            100,
-            (
-                playerXP /
-                requiredXP
-            ) * 100
-        );
-
-
-    playerLevelEl.textContent =
-        playerLevel;
-
-
-    xpFill.style.width =
-        `${percent}%`;
-
-
-    xpText.textContent =
-        `${playerXP} / ${requiredXP} XP`;
-
-}
-
-
-function addXP(amount) {
-
-    playerXP += amount;
-
-
-    let requiredXP =
-        playerLevel * 100;
-
-
-    while (
-        playerXP >=
-        requiredXP
-    ) {
-
-        playerXP -=
-            requiredXP;
-
-
-        playerLevel++;
-
-
-        requiredXP =
-            playerLevel * 100;
-
-
-        showAchievement(
-            `PLAYER LEVEL ${playerLevel}`
-        );
-
-    }
-
-
-    localStorage.setItem(
-        "blockdrop_xp",
-        playerXP
-    );
-
-
-    localStorage.setItem(
-        "blockdrop_player_level",
-        playerLevel
-    );
-
-
-    updateProfileUI();
-
-}
-
-
-/* =====================================================
-   ACHIEVEMENTS
-===================================================== */
-
-function unlockAchievement(
-    id,
-    title
-) {
-
-    if (
-        achievements.includes(id)
-    ) {
-
+    if (unlockedAchievements[id]) {
         return;
-
     }
 
-
-    achievements.push(id);
-
+    unlockedAchievements[id] = true;
 
     localStorage.setItem(
-        "blockdrop_achievements",
-        JSON.stringify(
-            achievements
-        )
+        "blockdropAchievements",
+        JSON.stringify(unlockedAchievements)
     );
-
 
     showAchievement(
-        title
+        ACHIEVEMENTS[id].title
     );
 
 }
@@ -618,577 +249,299 @@ function unlockAchievement(
 
 function showAchievement(title) {
 
-    achievementFlash.textContent =
-        `★ ${title}`;
+    const titleEl =
+        document.getElementById("achievementTitle");
 
+    titleEl.textContent = title;
 
-    achievementFlash.classList.remove(
-        "show"
-    );
+    achievementToast.classList.add("show");
 
+    playSound("achievement");
 
-    void achievementFlash.offsetWidth;
+    setTimeout(() => {
 
+        achievementToast.classList.remove("show");
 
-    achievementFlash.classList.add(
-        "show"
-    );
-
-}
-
-
-/* =====================================================
-   PROFILE SCREEN
-===================================================== */
-
-function openProfile() {
-
-    menuScreen.classList.remove(
-        "active"
-    );
-
-
-    gameScreen.classList.remove(
-        "active"
-    );
-
-
-    profileScreen.classList.add(
-        "active"
-    );
-
-
-    updateProfileScreen();
+    }, 3000);
 
 }
 
 
-function closeProfile() {
+/* =========================================================
+   AUDIO
+========================================================= */
 
-    profileScreen.classList.remove(
-        "active"
-    );
+let audioContext = null;
 
+function getAudioContext() {
 
-    menuScreen.classList.add(
-        "active"
-    );
+    if (!audioContext) {
 
-
-    updateMenuScores();
-
-    updateProfileUI();
-
-}
-
-
-/* =====================================================
-   UPDATE PROFILE
-===================================================== */
-
-function updateProfileScreen() {
-
-    document.getElementById(
-        "profileLevel"
-    ).textContent =
-        playerLevel;
-
-
-    const requiredXP =
-        playerLevel * 100;
-
-
-    const percent =
-        Math.min(
-            100,
-            (
-                playerXP /
-                requiredXP
-            ) * 100
-        );
-
-
-    document.getElementById(
-        "profileXpFill"
-    ).style.width =
-        `${percent}%`;
-
-
-    document.getElementById(
-        "profileXpText"
-    ).textContent =
-        `${playerXP} / ${requiredXP} XP`;
-
-
-    document.getElementById(
-        "totalGames"
-    ).textContent =
-        statistics.games;
-
-
-    document.getElementById(
-        "totalScore"
-    ).textContent =
-        statistics.totalScore.toLocaleString();
-
-
-    document.getElementById(
-        "totalLines"
-    ).textContent =
-        statistics.totalLines;
-
-
-    document.getElementById(
-        "profileBest"
-    ).textContent =
-        getGlobalBest();
-
-
-    document.getElementById(
-        "bestCombo"
-    ).textContent =
-        statistics.bestCombo;
-
-
-    document.getElementById(
-        "highestLevel"
-    ).textContent =
-        statistics.highestLevel;
-
-
-    renderAchievements();
-
-    renderHistory();
-
-}
-
-
-function getGlobalBest() {
-
-    return Math.max(
-
-        getBest("classic"),
-
-        getBest("time"),
-
-        getBest("endless")
-
-    );
-
-}
-
-
-/* =====================================================
-   ACHIEVEMENT GALLERY
-===================================================== */
-
-function renderAchievements() {
-
-    const grid =
-        document.getElementById(
-            "achievementGrid"
-        );
-
-
-    grid.innerHTML = "";
-
-
-    ACHIEVEMENT_DATA.forEach(
-        achievement => {
-
-            const unlocked =
-                achievements.includes(
-                    achievement.id
-                );
-
-
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-
-            card.className =
-                `achievement-card ${
-                    unlocked
-                        ? "unlocked"
-                        : "locked"
-                }`;
-
-
-            card.innerHTML = `
-
-                <div class="achievement-icon">
-
-                    ${
-                        unlocked
-                            ? achievement.icon
-                            : "?"
-                    }
-
-                </div>
-
-                <h4>
-                    ${
-                        unlocked
-                            ? achievement.title
-                            : "LOCKED"
-                    }
-                </h4>
-
-                <p>
-                    ${
-                        unlocked
-                            ? achievement.description
-                            : "Achievement not unlocked."
-                    }
-                </p>
-
-            `;
-
-
-            grid.appendChild(
-                card
-            );
-
-        }
-    );
-
-}
-
-
-/* =====================================================
-   GAME HISTORY
-===================================================== */
-
-function saveGameHistory() {
-
-    const record = {
-
-        score: score,
-
-        lines: lines,
-
-        level: level,
-
-        mode: gameMode,
-
-        difficulty: difficulty,
-
-        date:
-            new Date()
-                .toLocaleString()
-
-    };
-
-
-    gameHistory.unshift(
-        record
-    );
-
-
-    gameHistory =
-        gameHistory.slice(
-            0,
-            10
-        );
-
-
-    localStorage.setItem(
-        "blockdrop_history",
-        JSON.stringify(
-            gameHistory
-        )
-    );
-
-}
-
-
-function renderHistory() {
-
-    const container =
-        document.getElementById(
-            "gameHistory"
-        );
-
-
-    container.innerHTML = "";
-
-
-    if (
-        gameHistory.length === 0
-    ) {
-
-        container.innerHTML = `
-
-            <div class="history-row">
-
-                <span>
-                    NO GAMES
-                </span>
-
-                <span>
-                    PLAY A GAME
-                </span>
-
-                <span>
-                    TO BUILD
-                </span>
-
-                <span>
-                    HISTORY
-                </span>
-
-            </div>
-
-        `;
-
-        return;
+        audioContext =
+            new (window.AudioContext ||
+            window.webkitAudioContext)();
 
     }
 
-
-    gameHistory.forEach(
-        game => {
-
-            const row =
-                document.createElement(
-                    "div"
-                );
-
-
-            row.className =
-                "history-row";
-
-
-            row.innerHTML = `
-
-                <div>
-
-                    <span>
-                        ${game.date}
-                    </span>
-
-                    <strong>
-                        ${game.mode.toUpperCase()}
-                    </strong>
-
-                </div>
-
-
-                <div>
-
-                    <span>
-                        SCORE
-                    </span>
-
-                    <strong class="history-score">
-                        ${game.score.toLocaleString()}
-                    </strong>
-
-                </div>
-
-
-                <div>
-
-                    <span>
-                        LINES
-                    </span>
-
-                    <strong>
-                        ${game.lines}
-                    </strong>
-
-                </div>
-
-
-                <div>
-
-                    <span>
-                        LEVEL
-                    </span>
-
-                    <strong>
-                        ${game.level}
-                    </strong>
-
-                </div>
-
-            `;
-
-
-            container.appendChild(
-                row
-            );
-
-        }
-    );
+    return audioContext;
 
 }
 
 
-/* =====================================================
-   CLEAR HISTORY
-===================================================== */
+function playSound(type) {
 
-function clearHistory() {
+    if (!settings.sound) {
+        return;
+    }
 
-    gameHistory = [];
+    try {
 
+        const ctx = getAudioContext();
 
-    localStorage.setItem(
-        "blockdrop_history",
-        JSON.stringify([])
-    );
+        const oscillator =
+            ctx.createOscillator();
 
+        const gain =
+            ctx.createGain();
 
-    renderHistory();
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
 
-}
+        const now = ctx.currentTime;
 
+        const sounds = {
 
-/* =====================================================
-   BOARD
-===================================================== */
+            move: [180, 0.04],
+            rotate: [280, 0.05],
+            drop: [100, 0.08],
+            clear: [500, 0.12],
+            combo: [700, 0.15],
+            level: [900, 0.2],
+            achievement: [1000, 0.3],
+            gameover: [80, 0.3]
 
-function createBoard() {
+        };
 
-    board =
-        Array.from(
-            {
-                length: ROWS
-            },
-            () =>
-                Array(COLS).fill(0)
+        const [frequency, duration] =
+            sounds[type] || sounds.move;
+
+        oscillator.frequency.setValueAtTime(
+            frequency,
+            now
         );
 
+        oscillator.type = "sine";
+
+        gain.gain.setValueAtTime(
+            0.001,
+            now
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.08,
+            now + 0.01
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            now + duration
+        );
+
+        oscillator.start(now);
+        oscillator.stop(now + duration);
+
+    } catch (error) {
+
+        console.log("Audio unavailable.");
+
+    }
+
 }
 
 
-/* =====================================================
-   RANDOM PIECE
-===================================================== */
+/* =========================================================
+   BOARD
+========================================================= */
+
+function createEmptyBoard() {
+
+    return Array.from(
+        { length: ROWS },
+        () => Array(COLS).fill(null)
+    );
+
+}
+
+
+function buildBoardDOM() {
+
+    gameBoard.innerHTML = "";
+
+    for (let i = 0; i < ROWS * COLS; i++) {
+
+        const cell =
+            document.createElement("div");
+
+        cell.className = "cell";
+
+        gameBoard.appendChild(cell);
+
+    }
+
+}
+
+
+function renderBoard() {
+
+    const cells =
+        gameBoard.children;
+
+    for (let r = 0; r < ROWS; r++) {
+
+        for (let c = 0; c < COLS; c++) {
+
+            const index =
+                r * COLS + c;
+
+            const cell =
+                cells[index];
+
+            cell.className = "cell";
+            cell.style.removeProperty(
+                "--piece-color"
+            );
+
+            if (board[r][c]) {
+
+                cell.classList.add("filled");
+
+                cell.style.setProperty(
+                    "--piece-color",
+                    board[r][c]
+                );
+
+            }
+
+        }
+
+    }
+
+    renderCurrentPiece();
+    renderGhostPiece();
+
+}
+
+
+/* =========================================================
+   PIECES
+========================================================= */
 
 function randomPiece() {
 
-    const source =
-        PIECES[
+    const key =
+        PIECE_KEYS[
             Math.floor(
-                Math.random() *
-                PIECES.length
+                Math.random() * PIECE_KEYS.length
             )
         ];
 
+    const source = PIECES[key];
 
     return {
 
-        name:
-            source.name,
+        type: key,
 
-        matrix:
-            source.matrix.map(
-                row =>
-                    [...row]
-            ),
+        color: source.color,
 
-        color:
-            source.color
+        shape: source.shape.map(
+            row => [...row]
+        ),
+
+        row: 0,
+
+        col:
+            Math.floor(
+                (COLS - source.shape[0].length) / 2
+            )
 
     };
 
 }
 
 
-/* =====================================================
-   SPAWN
-===================================================== */
+function spawnPiece() {
 
-function spawnPlayer() {
-
-    player =
-        nextPiece ||
-        randomPiece();
-
+    currentPiece =
+        nextPiece || randomPiece();
 
     nextPiece =
         randomPiece();
 
+    currentPiece.row = 0;
 
-    player.x =
+    currentPiece.col =
         Math.floor(
-            (
-                COLS -
-                player.matrix[0].length
-            ) / 2
+            (COLS -
+                currentPiece.shape[0].length) / 2
         );
-
-
-    player.y = 0;
-
 
     canHold = true;
 
-
     if (
-        collision()
+        collision(
+            currentPiece,
+            0,
+            0,
+            currentPiece.shape
+        )
     ) {
 
         endGame();
 
     }
 
-
-    drawPreviews();
+    renderNext();
+    renderHold();
 
 }
 
 
-/* =====================================================
+/* =========================================================
    COLLISION
-===================================================== */
+========================================================= */
 
-function collision() {
+function collision(
+    piece,
+    rowOffset = 0,
+    colOffset = 0,
+    shape = piece.shape
+) {
 
-    for (
-        let y = 0;
-        y < player.matrix.length;
-        y++
-    ) {
+    for (let r = 0; r < shape.length; r++) {
 
-        for (
-            let x = 0;
-            x < player.matrix[y].length;
-            x++
-        ) {
+        for (let c = 0; c < shape[r].length; c++) {
 
-            if (
-                !player.matrix[y][x]
-            )
+            if (!shape[r][c]) {
                 continue;
-
-
-            const boardX =
-                player.x + x;
-
-
-            const boardY =
-                player.y + y;
-
-
-            if (
-                boardX < 0 ||
-                boardX >= COLS ||
-                boardY >= ROWS
-            ) {
-
-                return true;
-
             }
 
+            const row =
+                piece.row + r + rowOffset;
+
+            const col =
+                piece.col + c + colOffset;
+
+            if (col < 0 || col >= COLS) {
+                return true;
+            }
+
+            if (row >= ROWS) {
+                return true;
+            }
 
             if (
-                boardY >= 0 &&
-                board[boardY][boardX]
+                row >= 0 &&
+                board[row][col]
             ) {
 
                 return true;
@@ -1198,109 +551,152 @@ function collision() {
         }
 
     }
-
 
     return false;
 
 }
 
 
-/* =====================================================
-   MOVE
-===================================================== */
+/* =========================================================
+   MOVEMENT
+========================================================= */
 
-function movePlayer(dir) {
+function movePiece(direction) {
 
-    if (
-        !running ||
-        paused
-    )
+    if (!gameRunning || paused || clearingRows.length) {
         return;
-
-
-    player.x += dir;
-
+    }
 
     if (
-        collision()
+        !collision(
+            currentPiece,
+            0,
+            direction
+        )
     ) {
 
-        player.x -= dir;
+        currentPiece.col += direction;
+
+        playSound("move");
+
+        renderBoard();
 
     }
 
 }
 
 
-/* =====================================================
-   ROTATE
-===================================================== */
+function moveDown() {
+
+    if (!gameRunning || paused || clearingRows.length) {
+        return;
+    }
+
+    if (
+        !collision(
+            currentPiece,
+            1,
+            0
+        )
+    ) {
+
+        currentPiece.row++;
+
+    } else {
+
+        lockPiece();
+
+    }
+
+    renderBoard();
+
+}
+
+
+function hardDrop() {
+
+    if (!gameRunning || paused || clearingRows.length) {
+        return;
+    }
+
+    let distance = 0;
+
+    while (
+        !collision(
+            currentPiece,
+            distance + 1,
+            0
+        )
+    ) {
+
+        distance++;
+
+    }
+
+    currentPiece.row += distance;
+
+    score += distance * 2;
+
+    updateUI();
+
+    playSound("drop");
+
+    lockPiece();
+
+    renderBoard();
+
+}
+
+
+/* =========================================================
+   ROTATION
+========================================================= */
 
 function rotateMatrix(matrix) {
 
     return matrix[0].map(
         (_, index) =>
             matrix
-                .map(
-                    row =>
-                        row[index]
-                )
+                .map(row => row[index])
                 .reverse()
     );
 
 }
 
 
-function rotatePlayer() {
+function rotatePiece() {
 
-    if (
-        !running ||
-        paused
-    )
+    if (!gameRunning || paused || clearingRows.length) {
         return;
+    }
 
-
-    const oldMatrix =
-        player.matrix;
-
-
-    const oldX =
-        player.x;
-
-
-    player.matrix =
+    const rotated =
         rotateMatrix(
-            player.matrix
+            currentPiece.shape
         );
 
+    const kicks =
+        [0, -1, 1, -2, 2];
 
-    if (
-        collision()
-    ) {
-
-        player.x++;
-
+    for (const offset of kicks) {
 
         if (
-            collision()
+            !collision(
+                currentPiece,
+                0,
+                offset,
+                rotated
+            )
         ) {
 
-            player.x =
-                oldX - 1;
+            currentPiece.shape = rotated;
+            currentPiece.col += offset;
 
+            playSound("rotate");
 
-            if (
-                collision()
-            ) {
+            renderBoard();
 
-                player.x =
-                    oldX;
-
-
-                player.matrix =
-                    oldMatrix;
-
-            }
+            return;
 
         }
 
@@ -1309,1494 +705,747 @@ function rotatePlayer() {
 }
 
 
-/* =====================================================
-   DROP
-===================================================== */
-
-function dropPlayer() {
-
-    if (
-        !running ||
-        paused
-    )
-        return;
-
-
-    player.y++;
-
-
-    if (
-        collision()
-    ) {
-
-        player.y--;
-
-        lockPiece();
-
-    }
-
-
-    dropCounter = 0;
-
-}
-
-
-/* =====================================================
-   HARD DROP
-===================================================== */
-
-function hardDrop() {
-
-    if (
-        !running ||
-        paused
-    )
-        return;
-
-
-    let distance = 0;
-
-
-    while (
-        !collision()
-    ) {
-
-        player.y++;
-
-        distance++;
-
-    }
-
-
-    player.y--;
-
-    distance--;
-
-
-    const points =
-        Math.max(
-            0,
-            distance * 2
-        );
-
-
-    score += points;
-
-
-    addXP(
-        Math.max(
-            1,
-            Math.floor(
-                distance / 2
-            )
-        )
-    );
-
-
-    showScorePopup(
-        points
-    );
-
-
-    shakeAmount = 7;
-
-
-    lockPiece();
-
-}
-
-
-/* =====================================================
+/* =========================================================
    HOLD
-===================================================== */
+========================================================= */
 
-function holdCurrent() {
+function holdCurrentPiece() {
 
     if (
-        !running ||
+        !gameRunning ||
         paused ||
-        !canHold
-    )
+        !canHold ||
+        clearingRows.length
+    ) {
         return;
+    }
 
+    const stored = currentPiece.type;
 
     if (!holdPiece) {
 
-        holdPiece = {
+        holdPiece = stored;
 
-            name:
-                player.name,
+        spawnPiece();
 
-            matrix:
-                player.matrix.map(
-                    row =>
-                        [...row]
-                ),
+    } else {
 
-            color:
-                player.color
-
-        };
-
-
-        spawnPlayer();
-
-    }
-    else {
-
-        const temp =
+        const swap =
             holdPiece;
 
+        holdPiece = stored;
 
-        holdPiece = {
+        const source =
+            PIECES[swap];
 
-            name:
-                player.name,
+        currentPiece = {
 
-            matrix:
-                player.matrix.map(
-                    row =>
-                        [...row]
-                ),
+            type: swap,
 
-            color:
-                player.color
+            color: source.color,
 
-        };
+            shape: source.shape.map(
+                row => [...row]
+            ),
 
+            row: 0,
 
-        player = {
-
-            name:
-                temp.name,
-
-            matrix:
-                temp.matrix.map(
-                    row =>
-                        [...row]
-                ),
-
-            color:
-                temp.color,
-
-            x: 0,
-
-            y: 0
+            col:
+                Math.floor(
+                    (COLS -
+                        source.shape[0].length) / 2
+                )
 
         };
-
-
-        player.x =
-            Math.floor(
-                (
-                    COLS -
-                    player.matrix[0].length
-                ) / 2
-            );
 
     }
-
 
     canHold = false;
 
+    playSound("rotate");
 
-    drawPreviews();
+    renderHold();
+    renderBoard();
 
 }
 
 
-/* =====================================================
-   LOCK
-===================================================== */
+/* =========================================================
+   LOCK PIECE
+========================================================= */
 
 function lockPiece() {
 
-    player.matrix.forEach(
-        (row,y) => {
-
-            row.forEach(
-                (value,x) => {
-
-                    if (!value)
-                        return;
-
-
-                    const boardY =
-                        player.y + y;
-
-
-                    const boardX =
-                        player.x + x;
-
-
-                    if (
-                        boardY >= 0 &&
-                        boardY < ROWS
-                    ) {
-
-                        board[boardY][boardX] = {
-
-                            color:
-                                player.color
-
-                        };
-
-                    }
-
-                }
-            );
-
-        }
-    );
-
-
-    const cleared =
-        clearLines();
-
-
-    if (
-        cleared === 0
-    ) {
-
-        combo = 0;
-
-        multiplier = 1;
-
-    }
-
-
-    spawnPlayer();
-
-
-    dropCounter = 0;
-
-}
-
-
-/* =====================================================
-   CLEAR LINES
-===================================================== */
-
-function clearLines() {
-
-    let count = 0;
-
-
     for (
-        let y = ROWS - 1;
-        y >= 0;
-        y--
+        let r = 0;
+        r < currentPiece.shape.length;
+        r++
     ) {
 
-        if (
-            board[y].every(
-                cell =>
-                    cell
-            )
+        for (
+            let c = 0;
+            c < currentPiece.shape[r].length;
+            c++
         ) {
 
-            clearingRows.push(
-                y
-            );
+            if (!currentPiece.shape[r][c]) {
+                continue;
+            }
 
-            count++;
+            const row =
+                currentPiece.row + r;
+
+            const col =
+                currentPiece.col + c;
+
+            if (
+                row >= 0 &&
+                row < ROWS &&
+                col >= 0 &&
+                col < COLS
+            ) {
+
+                board[row][col] =
+                    currentPiece.color;
+
+            }
 
         }
 
     }
 
+    unlockAchievement("FIRST_DROP");
 
-    if (
-        !count
-    )
-        return 0;
-
-
-    lines += count;
-
-
-    combo++;
-
-
-    multiplier =
-        Math.min(
-            5,
-            1 +
-            Math.floor(
-                combo / 2
-            )
-        );
-
-
-    const base =
-        [0,100,300,500,800][count] ||
-        800;
-
-
-    const comboBonus =
-        combo > 1
-            ? combo * 100
-            : 0;
-
-
-    const points =
-        (
-            base +
-            comboBonus
-        ) *
-        level *
-        multiplier;
-
-
-    score += points;
-
-
-    addXP(
-        count * 10 +
-        combo * 5
-    );
-
-
-    if (
-        count === 4
-    ) {
-
-        unlockAchievement(
-            "tetris",
-            "TETRIS CLEAR"
-        );
-
-    }
-
-
-    if (
-        combo >= 3
-    ) {
-
-        unlockAchievement(
-            "combo3",
-            "3X COMBO"
-        );
-
-    }
-
-
-    if (
-        combo >= 5
-    ) {
-
-        unlockAchievement(
-            "combo5",
-            "5X COMBO"
-        );
-
-    }
-
-
-    if (
-        combo >
-        statistics.bestCombo
-    ) {
-
-        statistics.bestCombo =
-            combo;
-
-    }
-
-
-    createLineParticles();
-
-
-    shakeAmount =
-        5 +
-        count * 3;
-
-
-    clearTimer = 180;
-
-
-    clearFlash.classList.remove(
-        "show"
-    );
-
-
-    void clearFlash.offsetWidth;
-
-
-    clearFlash.classList.add(
-        "show"
-    );
-
-
-    if (
-        combo > 1
-    ) {
-
-        showCombo();
-
-    }
-
-
-    const previousLevel =
-        level;
-
-
-    level =
-        Math.floor(
-            lines / 10
-        ) + 1;
-
-
-    if (
-        level >
-        previousLevel
-    ) {
-
-        showLevelUp();
-
-    }
-
-
-    if (
-        level >
-        statistics.highestLevel
-    ) {
-
-        statistics.highestLevel =
-            level;
-
-    }
-
-
-    updateSpeed();
-
-
-    updateMission();
-
-
-    updateUI();
-
-
-    return count;
+    checkLines();
 
 }
 
 
-/* =====================================================
-   MISSION
-===================================================== */
+/* =========================================================
+   LINE CLEAR
+========================================================= */
 
-function updateMission() {
-
-    const progress =
-        Math.min(
-            missionTarget,
-            lines -
-            missionStartLines
-        );
-
-
-    const percent =
-        (
-            progress /
-            missionTarget
-        ) * 100;
-
-
-    missionFill.style.width =
-        `${percent}%`;
-
-
-    missionText.textContent =
-        progress >= missionTarget
-            ? "MISSION COMPLETE"
-            : `CLEAR ${
-                missionTarget -
-                progress
-            } MORE LINES`;
-
-
-    if (
-        progress >=
-        missionTarget
-    ) {
-
-        unlockAchievement(
-            "mission",
-            "MISSION COMPLETE"
-        );
-
-
-        addXP(50);
-
-
-        missionStartLines =
-            lines;
-
-
-        missionTarget =
-            Math.min(
-                20,
-                missionTarget + 5
-            );
-
-    }
-
-}
-
-
-/* =====================================================
-   CLEAR ANIMATION
-===================================================== */
-
-function finishLineClear() {
-
-    if (
-        !clearingRows.length
-    )
-        return;
-
-
-    clearingRows
-        .sort(
-            (a,b) =>
-                b-a
-        )
-        .forEach(
-            row => {
-
-                board.splice(
-                    row,
-                    1
-                );
-
-
-                board.unshift(
-                    Array(COLS).fill(0)
-                );
-
-            }
-        );
-
+function checkLines() {
 
     clearingRows = [];
 
-}
-
-
-/* =====================================================
-   SPEED
-===================================================== */
-
-function updateSpeed() {
-
-    const baseSpeed =
-        difficulty === "normal"
-            ? 800
-            : difficulty === "hard"
-                ? 550
-                : 350;
-
-
-    dropInterval =
-        Math.max(
-            80,
-            baseSpeed -
-            (
-                level - 1
-            ) * 55
-        );
-
-}
-
-
-/* =====================================================
-   DRAW BOARD
-===================================================== */
-
-function drawBoard() {
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    ctx.save();
-
-
-    if (
-        shakeAmount > 0
-    ) {
-
-        ctx.translate(
-
-            (
-                Math.random() -
-                .5
-            ) *
-            shakeAmount,
-
-            (
-                Math.random() -
-                .5
-            ) *
-            shakeAmount
-
-        );
-
-
-        shakeAmount *= .88;
-
+    for (let r = 0; r < ROWS; r++) {
 
         if (
-            shakeAmount < .3
+            board[r].every(cell => cell)
         ) {
 
-            shakeAmount = 0;
+            clearingRows.push(r);
 
         }
 
     }
 
+    if (!clearingRows.length) {
 
-    drawGrid();
+        combo = 0;
 
+        spawnPiece();
 
-    board.forEach(
-        (row,y) => {
+        renderBoard();
 
-            row.forEach(
-                (cell,x) => {
+        return;
 
-                    if (
-                        cell
-                    ) {
+    }
 
-                        drawBlock(
+    combo++;
 
-                            ctx,
+    bestComboSession =
+        Math.max(
+            bestComboSession,
+            combo
+        );
 
-                            x * BLOCK,
+    statistics.totalLines +=
+        clearingRows.length;
 
-                            y * BLOCK,
+    lines += clearingRows.length;
 
-                            BLOCK,
+    const count =
+        clearingRows.length;
 
-                            cell.color
+    const baseScore = {
 
-                        );
+        1: 100,
+        2: 300,
+        3: 500,
+        4: 800
 
-                    }
+    }[count] || 800;
 
-                }
-            );
+    const comboBonus =
+        combo > 1
+            ? combo * 50
+            : 0;
 
-        }
+    score +=
+        (baseScore + comboBonus) *
+        level;
+
+    lineFlash.classList.remove("active");
+
+    void lineFlash.offsetWidth;
+
+    lineFlash.classList.add("active");
+
+    showMessage(
+        count === 4
+            ? "TETRIS!"
+            : combo > 1
+                ? `${combo}X COMBO`
+                : `+${count} LINE`
     );
 
+    playSound(
+        combo > 1
+            ? "combo"
+            : "clear"
+    );
 
-    if (
-        player
-    ) {
+    if (settings.shake) {
 
-        drawGhost();
+        document.body.classList.remove("shake");
+
+        void document.body.offsetWidth;
+
+        document.body.classList.add("shake");
+
+    }
+
+    if (combo >= 5) {
+
+        unlockAchievement("COMBO_5");
+
+    }
+
+    if (lines >= 100) {
+
+        unlockAchievement("LINE_MASTER");
+
+    }
+
+    if (score >= 10000) {
+
+        unlockAchievement("SCORE_10K");
+
+    }
+
+    clearingRows.forEach(row => {
+
+        for (let c = 0; c < COLS; c++) {
+
+            board[row][c] = null;
+
+        }
+
+    });
+
+    clearTimer = setTimeout(() => {
+
+        removeClearedRows();
+
+    }, 180);
+
+    updateLevel();
+
+    updateUI();
+
+}
 
 
-        player.matrix.forEach(
-            (row,y) => {
+function removeClearedRows() {
 
-                row.forEach(
-                    (value,x) => {
+    board =
+        board.filter(
+            (_, index) =>
+                !clearingRows.includes(index)
+        );
 
-                        if (
-                            value
-                        ) {
+    while (board.length < ROWS) {
 
-                            drawBlock(
+        board.unshift(
+            Array(COLS).fill(null)
+        );
 
-                                ctx,
+    }
 
-                                (
-                                    player.x +
-                                    x
-                                ) *
-                                BLOCK,
+    const isPerfectClear =
+        board.every(
+            row =>
+                row.every(
+                    cell => !cell
+                )
+        );
 
-                                (
-                                    player.y +
-                                    y
-                                ) *
-                                BLOCK,
+    if (isPerfectClear) {
 
-                                BLOCK,
+        score += 2000 * level;
 
-                                player.color
+        statistics.perfectClears++;
 
-                            );
+        unlockAchievement("PERFECT_CLEAR");
 
-                        }
+        showMessage("PERFECT CLEAR!");
 
-                    }
-                );
+    }
+
+    clearingRows = [];
+
+    spawnPiece();
+
+    renderBoard();
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   LEVEL
+========================================================= */
+
+function updateLevel() {
+
+    const newLevel =
+        Math.floor(lines / 10) + 1;
+
+    if (newLevel > level) {
+
+        level = newLevel;
+
+        playSound("level");
+
+        showMessage(
+            `LEVEL ${level}`
+        );
+
+        startDropTimer();
+
+    }
+
+}
+
+
+/* =========================================================
+   SPEED
+========================================================= */
+
+function getDropSpeed() {
+
+    const difficultyMultiplier = {
+
+        normal: 1,
+        hard: 0.72,
+        insane: 0.48
+
+    }[difficulty];
+
+    const base =
+        Math.max(
+            100,
+            850 -
+            (level - 1) * 65
+        );
+
+    return base * difficultyMultiplier;
+
+}
+
+
+function startDropTimer() {
+
+    clearInterval(dropTimer);
+
+    dropTimer =
+        setInterval(
+            moveDown,
+            getDropSpeed()
+        );
+
+}
+
+
+/* =========================================================
+   TIMER
+========================================================= */
+
+function startTimeAttack() {
+
+    clearInterval(timeTimer);
+
+    timeRemaining = 180;
+
+    updateTimer();
+
+    timeTimer =
+        setInterval(() => {
+
+            if (!gameRunning || paused) {
+                return;
+            }
+
+            timeRemaining--;
+
+            updateTimer();
+
+            if (timeRemaining <= 0) {
+
+                endGame();
 
             }
-        );
 
-    }
-
-
-    ctx.restore();
+        }, 1000);
 
 }
 
 
-/* =====================================================
-   GRID
-===================================================== */
+function updateTimer() {
 
-function drawGrid() {
+    if (gameMode !== "time") {
 
-    ctx.strokeStyle =
-        "rgba(255,255,255,.035)";
+        timerEl.textContent = "∞";
 
-
-    ctx.lineWidth = 1;
-
-
-    for (
-        let x = 0;
-        x <= COLS;
-        x++
-    ) {
-
-        ctx.beginPath();
-
-
-        ctx.moveTo(
-            x * BLOCK,
-            0
-        );
-
-
-        ctx.lineTo(
-            x * BLOCK,
-            canvas.height
-        );
-
-
-        ctx.stroke();
+        return;
 
     }
 
-
-    for (
-        let y = 0;
-        y <= ROWS;
-        y++
-    ) {
-
-        ctx.beginPath();
-
-
-        ctx.moveTo(
-            0,
-            y * BLOCK
+    const minutes =
+        Math.floor(
+            timeRemaining / 60
         );
 
+    const seconds =
+        timeRemaining % 60;
 
-        ctx.lineTo(
-            canvas.width,
-            y * BLOCK
-        );
-
-
-        ctx.stroke();
-
-    }
+    timerEl.textContent =
+        `${minutes}:${String(seconds).padStart(2,"0")}`;
 
 }
 
 
-/* =====================================================
-   BLOCK
-===================================================== */
+/* =========================================================
+   PREVIEWS
+========================================================= */
 
-function drawBlock(
-    context,
-    x,
-    y,
-    size,
-    color
+function renderPreview(
+    container,
+    pieceType
 ) {
 
-    context.fillStyle =
-        color;
+    container.innerHTML = "";
 
-
-    context.shadowColor =
-        color;
-
-
-    context.shadowBlur =
-        12;
-
-
-    context.fillRect(
-
-        x + 2,
-
-        y + 2,
-
-        size - 4,
-
-        size - 4
-
-    );
-
-
-    context.shadowBlur = 0;
-
-
-    context.strokeStyle =
-        "rgba(255,255,255,.25)";
-
-
-    context.strokeRect(
-
-        x + 3,
-
-        y + 3,
-
-        size - 6,
-
-        size - 6
-
-    );
-
-}
-
-
-/* =====================================================
-   GHOST
-===================================================== */
-
-function drawGhost() {
-
-    const oldY =
-        player.y;
-
-
-    let ghostY =
-        player.y;
-
-
-    while (
-        true
-    ) {
-
-        player.y++;
-
-
-        if (
-            collision()
-        ) {
-
-            player.y--;
-
-            break;
-
-        }
-
-
-        ghostY =
-            player.y;
-
+    if (!pieceType) {
+        return;
     }
 
+    const source =
+        PIECES[pieceType];
 
-    player.y =
-        oldY;
+    for (let r = 0; r < 16; r++) {
 
+        const cell =
+            document.createElement("div");
 
-    ctx.globalAlpha =
-        .15;
+        cell.className =
+            "preview-cell";
 
+        const row =
+            Math.floor(r / 4);
 
-    player.matrix.forEach(
-        (row,y) => {
+        const col =
+            r % 4;
 
-            row.forEach(
-                (value,x) => {
+        if (
+            source.shape[row] &&
+            source.shape[row][col]
+        ) {
 
-                    if (
-                        value
-                    ) {
+            cell.classList.add("active");
 
-                        ctx.fillStyle =
-                            player.color;
-
-
-                        ctx.fillRect(
-
-                            (
-                                player.x +
-                                x
-                            ) *
-                            BLOCK + 4,
-
-                            (
-                                ghostY +
-                                y
-                            ) *
-                            BLOCK + 4,
-
-                            BLOCK - 8,
-
-                            BLOCK - 8
-
-                        );
-
-                    }
-
-                }
+            cell.style.setProperty(
+                "--piece-color",
+                source.color
             );
 
         }
-    );
 
+        container.appendChild(cell);
 
-    ctx.globalAlpha = 1;
+    }
 
 }
 
 
-/* =====================================================
-   PREVIEWS
-===================================================== */
+function renderNext() {
 
-function drawPreviews() {
-
-    drawPreview(
-        nextCtx,
-        nextCanvas,
-        nextPiece
+    renderPreview(
+        nextPieceEl,
+        nextPiece?.type
     );
 
+}
 
-    drawPreview(
-        holdCtx,
-        holdCanvas,
+
+function renderHold() {
+
+    renderPreview(
+        holdPieceEl,
         holdPiece
     );
 
 }
 
 
-function drawPreview(
-    context,
-    targetCanvas,
-    piece
-) {
+/* =========================================================
+   CURRENT / GHOST RENDER
+========================================================= */
 
-    context.clearRect(
-        0,
-        0,
-        targetCanvas.width,
-        targetCanvas.height
-    );
+function renderCurrentPiece() {
 
-
-    if (
-        !piece
-    )
+    if (!currentPiece) {
         return;
+    }
 
+    const cells =
+        gameBoard.children;
 
-    const size = 22;
+    for (
+        let r = 0;
+        r < currentPiece.shape.length;
+        r++
+    ) {
 
+        for (
+            let c = 0;
+            c < currentPiece.shape[r].length;
+            c++
+        ) {
 
-    const width =
-        piece.matrix[0].length *
-        size;
+            if (!currentPiece.shape[r][c]) {
+                continue;
+            }
 
+            const row =
+                currentPiece.row + r;
 
-    const height =
-        piece.matrix.length *
-        size;
+            const col =
+                currentPiece.col + c;
 
-
-    const offsetX =
-        (
-            targetCanvas.width -
-            width
-        ) / 2;
-
-
-    const offsetY =
-        (
-            targetCanvas.height -
-            height
-        ) / 2;
-
-
-    piece.matrix.forEach(
-        (row,y) => {
-
-            row.forEach(
-                (value,x) => {
-
-                    if (
-                        value
-                    ) {
-
-                        drawBlock(
-
-                            context,
-
-                            offsetX +
-                            x * size,
-
-                            offsetY +
-                            y * size,
-
-                            size,
-
-                            piece.color
-
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-    );
-
-}
-
-
-/* =====================================================
-   PARTICLES
-===================================================== */
-
-function createParticle(
-    x,
-    y,
-    color
-) {
-
-    particles.push({
-
-        x,
-
-        y,
-
-        vx:
-            (
-                Math.random() -
-                .5
-            ) * 4,
-
-        vy:
-            (
-                Math.random() -
-                .5
-            ) * 4,
-
-        life: 1,
-
-        color
-
-    });
-
-}
-
-
-function createLineParticles() {
-
-    clearingRows.forEach(
-        row => {
-
-            for (
-                let i = 0;
-                i < 25;
-                i++
+            if (
+                row >= 0 &&
+                row < ROWS &&
+                col >= 0 &&
+                col < COLS
             ) {
 
-                createParticle(
+                const cell =
+                    cells[row * COLS + col];
 
-                    Math.random() *
-                    canvas.width,
+                cell.classList.add("filled");
 
-                    row *
-                    BLOCK +
-                    Math.random() *
-                    BLOCK,
-
-                    "#ffffff"
-
+                cell.style.setProperty(
+                    "--piece-color",
+                    currentPiece.color
                 );
 
             }
 
         }
-    );
+
+    }
 
 }
 
 
-function updateParticles() {
+function renderGhostPiece() {
 
-    particles.forEach(
-        particle => {
-
-            particle.x +=
-                particle.vx;
-
-
-            particle.y +=
-                particle.vy;
-
-
-            particle.vy +=
-                .08;
-
-
-            particle.life -=
-                .025;
-
-        }
-    );
-
-
-    particles =
-        particles.filter(
-            particle =>
-                particle.life > 0
-        );
-
-}
-
-
-function drawParticles() {
-
-    particles.forEach(
-        particle => {
-
-            ctx.globalAlpha =
-                particle.life;
-
-
-            ctx.fillStyle =
-                particle.color;
-
-
-            ctx.fillRect(
-
-                particle.x,
-
-                particle.y,
-
-                3,
-
-                3
-
-            );
-
-        }
-    );
-
-
-    ctx.globalAlpha = 1;
-
-}
-
-
-/* =====================================================
-   EFFECTS
-===================================================== */
-
-function showLevelUp() {
-
-    levelFlash.classList.remove(
-        "show"
-    );
-
-
-    void levelFlash.offsetWidth;
-
-
-    levelFlash.classList.add(
-        "show"
-    );
-
-}
-
-
-function showCombo() {
-
-    comboFlash.textContent =
-        `COMBO ×${combo}`;
-
-
-    comboFlash.classList.remove(
-        "show"
-    );
-
-
-    void comboFlash.offsetWidth;
-
-
-    comboFlash.classList.add(
-        "show"
-    );
-
-}
-
-
-function showScorePopup(
-    points
-) {
-
-    if (
-        !points ||
-        points <= 0
-    )
+    if (!currentPiece) {
         return;
+    }
 
+    let distance = 0;
 
-    scorePopup.textContent =
-        `+${points}`;
+    while (
+        !collision(
+            currentPiece,
+            distance + 1,
+            0
+        )
+    ) {
 
+        distance++;
 
-    scorePopup.classList.remove(
-        "show"
-    );
+    }
 
+    const cells =
+        gameBoard.children;
 
-    void scorePopup.offsetWidth;
+    for (
+        let r = 0;
+        r < currentPiece.shape.length;
+        r++
+    ) {
 
+        for (
+            let c = 0;
+            c < currentPiece.shape[r].length;
+            c++
+        ) {
 
-    scorePopup.classList.add(
-        "show"
-    );
+            if (!currentPiece.shape[r][c]) {
+                continue;
+            }
+
+            const row =
+                currentPiece.row +
+                r +
+                distance;
+
+            const col =
+                currentPiece.col + c;
+
+            if (
+                row >= 0 &&
+                row < ROWS &&
+                col >= 0 &&
+                col < COLS
+            ) {
+
+                const cell =
+                    cells[row * COLS + col];
+
+                if (!cell.classList.contains("filled")) {
+
+                    cell.classList.add("ghost");
+
+                }
+
+            }
+
+        }
+
+    }
 
 }
 
 
-/* =====================================================
+/* =========================================================
    UI
-===================================================== */
+========================================================= */
 
 function updateUI() {
 
     scoreEl.textContent =
-        score;
-
-
-    bestEl.textContent =
-        bestScore;
-
+        score.toLocaleString();
 
     levelEl.textContent =
         level;
 
-
     linesEl.textContent =
         lines;
-
 
     comboEl.textContent =
         combo;
 
+    updateTimer();
 
-    multiplierEl.textContent =
-        `x${multiplier}`;
-
-
-    timerEl.textContent =
-        gameMode === "time"
-            ? `${Math.max(
-                0,
-                Math.ceil(
-                    timeRemaining
-                )
-            )}s`
-            : "∞";
-
-
-    updateMission();
+    updateMenuStats();
 
 }
 
 
-/* =====================================================
+function showMessage(text) {
+
+    messageEl.textContent = text;
+
+    messageEl.classList.remove("show");
+
+    void messageEl.offsetWidth;
+
+    messageEl.classList.add("show");
+
+}
+
+
+/* =========================================================
    START GAME
-===================================================== */
+========================================================= */
 
 function startGame() {
 
-    menuScreen.classList.remove(
-        "active"
-    );
+    clearInterval(dropTimer);
+    clearInterval(timeTimer);
 
-
-    profileScreen.classList.remove(
-        "active"
-    );
-
-
-    gameScreen.classList.add(
-        "active"
-    );
-
-
-    createBoard();
-
+    board =
+        createEmptyBoard();
 
     score = 0;
-
     level = 1;
-
     lines = 0;
-
     combo = 0;
-
-    multiplier = 1;
-
+    bestComboSession = 0;
 
     holdPiece = null;
+    nextPiece = null;
+    canHold = true;
+
+    gameRunning = true;
+    paused = false;
+
+    gameOverOverlay.classList.remove("active");
+    pauseOverlay.classList.remove("active");
+
+    menuScreen.classList.remove("active");
+    gameScreen.classList.add("active");
+
+    modeLabel.textContent =
+        gameMode.toUpperCase();
+
+    difficultyLabel.textContent =
+        difficulty.toUpperCase();
+
+    buildBoardDOM();
 
     nextPiece =
         randomPiece();
 
+    spawnPiece();
 
-    bestScore =
-        getBest(
-            gameMode
-        );
-
-
-    timeRemaining =
-        gameMode === "time"
-            ? 60
-            : Infinity;
-
-
-    clearingRows = [];
-
-    particles = [];
-
-    shakeAmount = 0;
-
-
-    missionStartLines = 0;
-
-    missionTarget = 5;
-
-
-    updateSpeed();
-
-
-    running = true;
-
-    paused = false;
-
-
-    spawnPlayer();
-
+    renderBoard();
 
     updateUI();
 
+    startDropTimer();
 
-    startCountdown();
+    statistics.totalGames++;
 
-}
+    saveStatistics();
 
+    if (gameMode === "time") {
 
-/* =====================================================
-   COUNTDOWN
-===================================================== */
+        startTimeAttack();
 
-function startCountdown() {
-
-    startOverlay.classList.add(
-        "active"
-    );
-
-
-    let count = 3;
-
-
-    countdown.textContent =
-        count;
-
-
-    const timer =
-        setInterval(
-            () => {
-
-                count--;
-
-
-                if (
-                    count > 0
-                ) {
-
-                    countdown.textContent =
-                        count;
-
-                }
-                else {
-
-                    countdown.textContent =
-                        "GO";
-
-
-                    setTimeout(
-                        () => {
-
-                            startOverlay.classList.remove(
-                                "active"
-                            );
-
-                        },
-                        500
-                    );
-
-
-                    clearInterval(
-                        timer
-                    );
-
-                }
-
-            },
-            700
-        );
+    }
 
 }
 
 
-/* =====================================================
+/* =========================================================
    PAUSE
-===================================================== */
+========================================================= */
 
 function togglePause() {
 
-    if (
-        !running
-    )
+    if (!gameRunning) {
         return;
+    }
 
-
-    paused =
-        !paused;
-
+    paused = !paused;
 
     pauseOverlay.classList.toggle(
         "active",
@@ -2806,379 +1455,532 @@ function togglePause() {
 }
 
 
-/* =====================================================
-   STATISTICS
-===================================================== */
+/* =========================================================
+   END GAME
+========================================================= */
 
-function updateStatistics() {
+function endGame() {
 
-    statistics.games++;
+    if (!gameRunning) {
+        return;
+    }
 
+    gameRunning = false;
+    paused = false;
 
-    statistics.totalScore +=
-        score;
+    clearInterval(dropTimer);
+    clearInterval(timeTimer);
 
+    if (clearTimer) {
+        clearTimeout(clearTimer);
+    }
 
-    statistics.totalLines +=
-        lines;
-
+    statistics.totalScore += score;
 
     statistics.bestCombo =
         Math.max(
             statistics.bestCombo,
-            combo
+            bestComboSession
         );
 
+    saveStatistics();
 
-    statistics.highestLevel =
-        Math.max(
-            statistics.highestLevel,
-            level
-        );
+    const best =
+        getBest(gameMode);
 
+    if (score > best) {
 
-    localStorage.setItem(
-        "blockdrop_statistics",
-        JSON.stringify(
-            statistics
-        )
-    );
-
-}
-
-
-/* =====================================================
-   END GAME
-===================================================== */
-
-function endGame() {
-
-    if (
-        !running
-    )
-        return;
-
-
-    running = false;
-
-    paused = false;
-
-
-    unlockAchievement(
-        "firstgame",
-        "FIRST DROP"
-    );
-
-
-    updateStatistics();
-
-
-    saveGameHistory();
-
-
-    const oldBest =
-        getBest(
-            gameMode
-        );
-
-
-    if (
-        score >
-        oldBest
-    ) {
-
-        saveBest(
-            gameMode,
+        localStorage.setItem(
+            `blockdropBest_${gameMode}`,
             score
         );
 
-
-        unlockAchievement(
-            "highscore",
-            "NEW HIGH SCORE"
-        );
-
     }
-
-
-    if (
-        lines >= 20
-    ) {
-
-        unlockAchievement(
-            "survivor20",
-            "20 LINE SURVIVOR"
-        );
-
-    }
-
-
-    gameOverOverlay.classList.add(
-        "active"
-    );
-
 
     document.getElementById(
         "finalScore"
     ).textContent =
-        score;
-
+        score.toLocaleString();
 
     document.getElementById(
-        "finalLines"
+        "finalHighScore"
     ).textContent =
-        lines;
-
+        getBest(gameMode).toLocaleString();
 
     document.getElementById(
         "finalLevel"
     ).textContent =
         level;
 
+    document.getElementById(
+        "finalLines"
+    ).textContent =
+        lines;
 
     document.getElementById(
-        "gameOverAchievement"
+        "finalCombo"
     ).textContent =
-        combo >= 5
-            ? "★ ELITE COMBO ACHIEVED"
-            : "";
+        bestComboSession;
 
+    gameOverOverlay.classList.add("active");
 
-    updateMenuScores();
+    playSound("gameover");
+
+    updateStatisticsUI();
 
 }
 
 
-/* =====================================================
+/* =========================================================
+   BEST SCORE
+========================================================= */
+
+function getBest(mode) {
+
+    return Number(
+        localStorage.getItem(
+            `blockdropBest_${mode}`
+        ) || 0
+    );
+
+}
+
+
+/* =========================================================
    MENU
-===================================================== */
+========================================================= */
 
-function returnToMenu() {
+function goToMenu() {
 
-    running = false;
-
+    gameRunning = false;
     paused = false;
 
+    clearInterval(dropTimer);
+    clearInterval(timeTimer);
 
-    pauseOverlay.classList.remove(
-        "active"
-    );
+    gameOverOverlay.classList.remove("active");
+    pauseOverlay.classList.remove("active");
 
+    gameScreen.classList.remove("active");
+    menuScreen.classList.add("active");
 
-    gameOverOverlay.classList.remove(
-        "active"
-    );
-
-
-    startOverlay.classList.remove(
-        "active"
-    );
-
-
-    gameScreen.classList.remove(
-        "active"
-    );
-
-
-    profileScreen.classList.remove(
-        "active"
-    );
-
-
-    menuScreen.classList.add(
-        "active"
-    );
-
-
-    updateMenuScores();
-
-    updateProfileUI();
+    updateMenuStats();
 
 }
 
 
-/* =====================================================
-   GAME LOOP
-===================================================== */
+function updateMenuStats() {
 
-function update(time = 0) {
+    const best =
+        getBest(gameMode);
 
-    const delta =
-        time -
-        lastTime;
+    document.getElementById(
+        "menuBestScore"
+    ).textContent =
+        best.toLocaleString();
 
+    document.getElementById(
+        "menuBestCombo"
+    ).textContent =
+        statistics.bestCombo;
 
-    lastTime =
-        time;
+    document.getElementById(
+        "menuLines"
+    ).textContent =
+        statistics.totalLines;
 
-
-    if (
-        running &&
-        !paused &&
-        !startOverlay.classList.contains(
-            "active"
-        )
-    ) {
-
-        dropCounter +=
-            delta;
+}
 
 
-        if (
-            dropCounter >
-            dropInterval
-        ) {
+/* =========================================================
+   SETTINGS UI
+========================================================= */
 
-            dropPlayer();
+function updateSettingsUI() {
 
-        }
+    document
+        .querySelectorAll(".toggle")
+        .forEach(toggle => {
 
+            const setting =
+                toggle.dataset.setting;
 
-        if (
-            gameMode === "time"
-        ) {
+            toggle.classList.toggle(
+                "active",
+                Boolean(settings[setting])
+            );
 
-            timeRemaining -=
-                delta / 1000;
+        });
 
-
-            if (
-                timeRemaining <= 0
-            ) {
-
-                timeRemaining = 0;
-
-                endGame();
-
-            }
-
-        }
-
-
-        if (
-            clearTimer > 0
-        ) {
-
-            clearTimer -=
-                delta;
-
-
-            if (
-                clearTimer <= 0
-            ) {
-
-                finishLineClear();
-
-            }
-
-        }
-
-    }
-
-
-    updateParticles();
-
-
-    drawBoard();
-
-
-    drawParticles();
-
-
-    updateUI();
-
-
-    requestAnimationFrame(
-        update
+    document.body.classList.toggle(
+        "reduced-motion",
+        settings.reducedMotion
     );
 
 }
 
 
-/* =====================================================
-   KEYBOARD
-===================================================== */
+function openSettings() {
+
+    updateSettingsUI();
+
+    settingsOverlay.classList.add("active");
+
+}
+
+
+function closeSettings() {
+
+    settingsOverlay.classList.remove(
+        "active"
+    );
+
+}
+
+
+/* =========================================================
+   STATISTICS UI
+========================================================= */
+
+function updateStatisticsUI() {
+
+    document.getElementById(
+        "totalGames"
+    ).textContent =
+        statistics.totalGames;
+
+    document.getElementById(
+        "totalScore"
+    ).textContent =
+        statistics.totalScore.toLocaleString();
+
+    document.getElementById(
+        "totalLines"
+    ).textContent =
+        statistics.totalLines;
+
+    document.getElementById(
+        "totalBestCombo"
+    ).textContent =
+        statistics.bestCombo;
+
+    document.getElementById(
+        "totalPerfectClears"
+    ).textContent =
+        statistics.perfectClears;
+
+    const unlocked =
+        Object.keys(unlockedAchievements)
+            .filter(
+                key =>
+                    unlockedAchievements[key]
+            ).length;
+
+    document.getElementById(
+        "achievementCount"
+    ).textContent =
+        `${unlocked}/5`;
+
+}
+
+
+/* =========================================================
+   MODE / DIFFICULTY
+========================================================= */
+
+document
+    .querySelectorAll(".mode-card")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(".mode-card")
+                    .forEach(item =>
+                        item.classList.remove(
+                            "selected"
+                        )
+                    );
+
+                button.classList.add(
+                    "selected"
+                );
+
+                gameMode =
+                    button.dataset.mode;
+
+                updateMenuStats();
+
+            }
+        );
+
+    });
+
+
+document
+    .querySelectorAll(".difficulty-btn")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".difficulty-btn"
+                    )
+                    .forEach(item =>
+                        item.classList.remove(
+                            "selected"
+                        )
+                    );
+
+                button.classList.add(
+                    "selected"
+                );
+
+                difficulty =
+                    button.dataset.difficulty;
+
+            }
+        );
+
+    });
+
+
+/* =========================================================
+   BUTTON EVENTS
+========================================================= */
+
+document
+    .getElementById("startBtn")
+    .addEventListener(
+        "click",
+        startGame
+    );
+
+
+document
+    .getElementById("pauseBtn")
+    .addEventListener(
+        "click",
+        togglePause
+    );
+
+
+document
+    .getElementById("resumeBtn")
+    .addEventListener(
+        "click",
+        togglePause
+    );
+
+
+document
+    .getElementById("restartBtn")
+    .addEventListener(
+        "click",
+        startGame
+    );
+
+
+document
+    .getElementById("menuBtn")
+    .addEventListener(
+        "click",
+        goToMenu
+    );
+
+
+document
+    .getElementById("gameOverMenuBtn")
+    .addEventListener(
+        "click",
+        goToMenu
+    );
+
+
+document
+    .getElementById("playAgainBtn")
+    .addEventListener(
+        "click",
+        startGame
+    );
+
+
+document
+    .getElementById("settingsBtn")
+    .addEventListener(
+        "click",
+        openSettings
+    );
+
+
+document
+    .getElementById("closeSettings")
+    .addEventListener(
+        "click",
+        closeSettings
+    );
+
+
+document
+    .getElementById("soundBtn")
+    .addEventListener(
+        "click",
+        () => {
+
+            settings.sound =
+                !settings.sound;
+
+            saveSettings();
+            updateSettingsUI();
+
+        }
+    );
+
+
+document
+    .querySelectorAll(".toggle")
+    .forEach(toggle => {
+
+        toggle.addEventListener(
+            "click",
+            () => {
+
+                const setting =
+                    toggle.dataset.setting;
+
+                settings[setting] =
+                    !settings[setting];
+
+                saveSettings();
+
+                updateSettingsUI();
+
+            }
+        );
+
+    });
+
+
+document
+    .getElementById("resetStatsBtn")
+    .addEventListener(
+        "click",
+        () => {
+
+            const confirmed =
+                confirm(
+                    "Reset all BLOCKDROP statistics and achievements?"
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+            statistics = {
+
+                totalGames: 0,
+                totalScore: 0,
+                totalLines: 0,
+                bestCombo: 0,
+                perfectClears: 0
+
+            };
+
+            unlockedAchievements = {};
+
+            localStorage.removeItem(
+                "blockdropStatistics"
+            );
+
+            localStorage.removeItem(
+                "blockdropAchievements"
+            );
+
+            saveStatistics();
+
+            updateStatisticsUI();
+            updateMenuStats();
+
+            alert(
+                "Statistics reset successfully."
+            );
+
+        }
+    );
+
+
+/* =========================================================
+   KEYBOARD CONTROLS
+========================================================= */
 
 document.addEventListener(
     "keydown",
     event => {
 
         if (
-            event.code ===
-            "ArrowLeft"
+            event.target.tagName === "INPUT" ||
+            event.target.tagName === "TEXTAREA"
         ) {
-
-            event.preventDefault();
-
-            movePlayer(-1);
-
+            return;
         }
 
+        switch (event.code) {
 
-        if (
-            event.code ===
-            "ArrowRight"
-        ) {
+            case "ArrowLeft":
+                event.preventDefault();
+                movePiece(-1);
+                break;
 
-            event.preventDefault();
+            case "ArrowRight":
+                event.preventDefault();
+                movePiece(1);
+                break;
 
-            movePlayer(1);
+            case "ArrowDown":
+                event.preventDefault();
+                moveDown();
+                break;
 
-        }
+            case "ArrowUp":
+                event.preventDefault();
+                rotatePiece();
+                break;
 
+            case "Space":
+                event.preventDefault();
+                hardDrop();
+                break;
 
-        if (
-            event.code ===
-            "ArrowDown"
-        ) {
+            case "KeyC":
+                holdCurrentPiece();
+                break;
 
-            event.preventDefault();
+            case "KeyP":
+                togglePause();
+                break;
 
-            dropPlayer();
+            case "Escape":
 
-        }
+                if (
+                    settingsOverlay.classList.contains(
+                        "active"
+                    )
+                ) {
 
+                    closeSettings();
 
-        if (
-            event.code ===
-            "ArrowUp"
-        ) {
+                } else if (gameRunning) {
 
-            event.preventDefault();
+                    togglePause();
 
-            rotatePlayer();
+                }
 
-        }
-
-
-        if (
-            event.code ===
-            "Space"
-        ) {
-
-            event.preventDefault();
-
-            hardDrop();
-
-        }
-
-
-        if (
-            event.code ===
-            "KeyC"
-        ) {
-
-            holdCurrent();
-
-        }
-
-
-        if (
-            event.code ===
-            "KeyP"
-        ) {
-
-            togglePause();
+                break;
 
         }
 
@@ -3186,367 +1988,63 @@ document.addEventListener(
 );
 
 
-/* =====================================================
-   MODE
-===================================================== */
-
-document
-    .querySelectorAll(
-        ".mode-btn"
-    )
-    .forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    document
-                        .querySelectorAll(
-                            ".mode-btn"
-                        )
-                        .forEach(
-                            btn =>
-                                btn.classList.remove(
-                                    "selected"
-                                )
-                        );
-
-
-                    button.classList.add(
-                        "selected"
-                    );
-
-
-                    gameMode =
-                        button.dataset.mode;
-
-                }
-            );
-
-        }
-    );
-
-
-/* =====================================================
-   DIFFICULTY
-===================================================== */
-
-document
-    .querySelectorAll(
-        ".difficulty-btn"
-    )
-    .forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    document
-                        .querySelectorAll(
-                            ".difficulty-btn"
-                        )
-                        .forEach(
-                            btn =>
-                                btn.classList.remove(
-                                    "selected"
-                                )
-                        );
-
-
-                    button.classList.add(
-                        "selected"
-                    );
-
-
-                    difficulty =
-                        button.dataset.difficulty;
-
-                }
-            );
-
-        }
-    );
-
-
-/* =====================================================
-   BUTTONS
-===================================================== */
-
-document
-    .getElementById(
-        "playBtn"
-    )
-    .addEventListener(
-        "click",
-        startGame
-    );
-
-
-document
-    .getElementById(
-        "profileBtn"
-    )
-    .addEventListener(
-        "click",
-        openProfile
-    );
-
-
-document
-    .getElementById(
-        "profileBackBtn"
-    )
-    .addEventListener(
-        "click",
-        closeProfile
-    );
-
-
-document
-    .getElementById(
-        "clearHistoryBtn"
-    )
-    .addEventListener(
-        "click",
-        clearHistory
-    );
-
-
-document
-    .getElementById(
-        "pauseBtn"
-    )
-    .addEventListener(
-        "click",
-        togglePause
-    );
-
-
-document
-    .getElementById(
-        "resumeBtn"
-    )
-    .addEventListener(
-        "click",
-        togglePause
-    );
-
-
-document
-    .getElementById(
-        "menuBtn"
-    )
-    .addEventListener(
-        "click",
-        returnToMenu
-    );
-
-
-document
-    .getElementById(
-        "backMenuBtn"
-    )
-    .addEventListener(
-        "click",
-        returnToMenu
-    );
-
-
-document
-    .getElementById(
-        "restartBtn"
-    )
-    .addEventListener(
-        "click",
-        startGame
-    );
-
-
-document
-    .getElementById(
-        "soundBtn"
-    )
-    .addEventListener(
-        "click",
-        () => {
-
-            soundEnabled =
-                !soundEnabled;
-
-
-            document.getElementById(
-                "soundBtn"
-            ).textContent =
-                soundEnabled
-                    ? "🔊"
-                    : "🔇";
-
-        }
-    );
-
-
-/* =====================================================
+/* =========================================================
    MOBILE CONTROLS
-===================================================== */
+========================================================= */
 
 document
-    .getElementById(
-        "leftBtn"
+    .querySelectorAll(
+        ".mobile-controls button"
     )
-    .addEventListener(
-        "click",
-        () =>
-            movePlayer(-1)
-    );
+    .forEach(button => {
 
+        button.addEventListener(
+            "click",
+            () => {
 
-document
-    .getElementById(
-        "rightBtn"
-    )
-    .addEventListener(
-        "click",
-        () =>
-            movePlayer(1)
-    );
+                const action =
+                    button.dataset.action;
 
+                if (action === "left") {
+                    movePiece(-1);
+                }
 
-document
-    .getElementById(
-        "downBtn"
-    )
-    .addEventListener(
-        "click",
-        dropPlayer
-    );
+                if (action === "right") {
+                    movePiece(1);
+                }
 
+                if (action === "rotate") {
+                    rotatePiece();
+                }
 
-document
-    .getElementById(
-        "rotateBtn"
-    )
-    .addEventListener(
-        "click",
-        rotatePlayer
-    );
+                if (action === "down") {
+                    moveDown();
+                }
 
-
-document
-    .getElementById(
-        "dropBtn"
-    )
-    .addEventListener(
-        "click",
-        hardDrop
-    );
-
-
-/* =====================================================
-   TOUCH
-===================================================== */
-
-let touchStartX = 0;
-
-let touchStartY = 0;
-
-
-canvas.addEventListener(
-    "touchstart",
-    event => {
-
-        const touch =
-            event.touches[0];
-
-
-        touchStartX =
-            touch.clientX;
-
-
-        touchStartY =
-            touch.clientY;
-
-    },
-    {
-        passive: true
-    }
-);
-
-
-canvas.addEventListener(
-    "touchend",
-    event => {
-
-        const touch =
-            event.changedTouches[0];
-
-
-        const dx =
-            touch.clientX -
-            touchStartX;
-
-
-        const dy =
-            touch.clientY -
-            touchStartY;
-
-
-        if (
-            Math.abs(dx) >
-            Math.abs(dy)
-        ) {
-
-            if (
-                Math.abs(dx) >
-                25
-            ) {
-
-                movePlayer(
-                    dx > 0
-                        ? 1
-                        : -1
-                );
+                if (action === "drop") {
+                    hardDrop();
+                }
 
             }
+        );
 
-        }
-        else {
-
-            if (
-                dy > 40
-            ) {
-
-                dropPlayer();
-
-            }
-            else if (
-                dy < -40
-            ) {
-
-                rotatePlayer();
-
-            }
-
-        }
-
-    },
-    {
-        passive: true
-    }
-);
+    });
 
 
-/* =====================================================
+/* =========================================================
    INITIALIZE
-===================================================== */
+========================================================= */
 
-updateMenuScores();
+buildBoardDOM();
 
-updateProfileUI();
+updateSettingsUI();
 
-createBoard();
+updateStatisticsUI();
 
-requestAnimationFrame(
-    update
+updateMenuStats();
+
+menuScreen.classList.add("active");
+
+console.log(
+    "BLOCKDROP Commit 7 loaded successfully."
 );
