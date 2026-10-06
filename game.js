@@ -1,116 +1,55 @@
 /* =========================================================
-   BLOCKDROP
-   Commit 7
-   Achievements + Statistics + Settings
+   BLOCKDROP - GAME ENGINE
+   Stable Version
 ========================================================= */
 
-const ROWS = 20;
-const COLS = 10;
+// ===============================
+// DOM ELEMENTS
+// ===============================
 
-
-/* =========================================================
-   DOM
-========================================================= */
-
-const menuScreen = document.getElementById("menuScreen");
-const gameScreen = document.getElementById("gameScreen");
-
-const gameBoard = document.getElementById("gameBoard");
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas ? canvas.getContext("2d") : null;
 
 const scoreEl = document.getElementById("score");
 const levelEl = document.getElementById("level");
 const linesEl = document.getElementById("lines");
 const comboEl = document.getElementById("combo");
-const timerEl = document.getElementById("timer");
 
-const nextPieceEl = document.getElementById("nextPiece");
-const holdPieceEl = document.getElementById("holdPiece");
+const nextCanvas = document.getElementById("nextCanvas");
+const holdCanvas = document.getElementById("holdCanvas");
 
-const modeLabel = document.getElementById("modeLabel");
-const difficultyLabel = document.getElementById("difficultyLabel");
+const overlay = document.getElementById("overlay");
+const overlayTitle = document.getElementById("overlayTitle");
+const overlayMessage = document.getElementById("overlayMessage");
 
-const gameOverOverlay = document.getElementById("gameOverOverlay");
-const pauseOverlay = document.getElementById("pauseOverlay");
-const countdownOverlay = document.getElementById("countdownOverlay");
+const finalScoreEl = document.getElementById("finalScore");
+const finalLinesEl = document.getElementById("finalLines");
+const finalHighScoreEl = document.getElementById("finalHighScore");
 
-const settingsOverlay = document.getElementById("settingsOverlay");
-const achievementToast = document.getElementById("achievementToast");
-
-const lineFlash = document.getElementById("lineFlash");
-const messageEl = document.getElementById("message");
+const xpBar = document.getElementById("xpBar");
+const xpText = document.getElementById("xpText");
+const playerLevelEl = document.getElementById("playerLevel");
 
 
-/* =========================================================
-   PIECES
-========================================================= */
+// ===============================
+// CANVAS SETTINGS
+// ===============================
 
-const PIECES = {
+const COLS = 10;
+const ROWS = 20;
+const BLOCK_SIZE = 30;
 
-    I: {
-        color: "#49eaff",
-        shape: [
-            [1,1,1,1]
-        ]
-    },
-
-    O: {
-        color: "#ffd95a",
-        shape: [
-            [1,1],
-            [1,1]
-        ]
-    },
-
-    T: {
-        color: "#9b6cff",
-        shape: [
-            [0,1,0],
-            [1,1,1]
-        ]
-    },
-
-    S: {
-        color: "#53f5a5",
-        shape: [
-            [0,1,1],
-            [1,1,0]
-        ]
-    },
-
-    Z: {
-        color: "#ff5577",
-        shape: [
-            [1,1,0],
-            [0,1,1]
-        ]
-    },
-
-    J: {
-        color: "#5c8cff",
-        shape: [
-            [1,0,0],
-            [1,1,1]
-        ]
-    },
-
-    L: {
-        color: "#ff9c55",
-        shape: [
-            [0,0,1],
-            [1,1,1]
-        ]
-    }
-
-};
-
-const PIECE_KEYS = Object.keys(PIECES);
+if (canvas) {
+    canvas.width = COLS * BLOCK_SIZE;
+    canvas.height = ROWS * BLOCK_SIZE;
+}
 
 
-/* =========================================================
-   GAME STATE
-========================================================= */
+// ===============================
+// GAME STATE
+// ===============================
 
-let board = [];
+let board = createBoard();
 
 let currentPiece = null;
 let nextPiece = null;
@@ -119,1882 +58,1726 @@ let holdPiece = null;
 let canHold = true;
 
 let score = 0;
-let level = 1;
 let lines = 0;
+let level = 1;
 let combo = 0;
-let bestComboSession = 0;
+
+let gameRunning = false;
+let gamePaused = false;
+let gameOver = false;
 
 let gameMode = "classic";
 let difficulty = "normal";
 
-let gameRunning = false;
-let paused = false;
+let dropCounter = 0;
+let lastTime = 0;
 
-let dropTimer = null;
-let timeTimer = null;
+let gameTimer = 0;
+let timerInterval = null;
 
-let timeRemaining = 0;
-
-let clearingRows = [];
-let clearTimer = null;
+let animationFrame = null;
 
 
-/* =========================================================
-   SETTINGS
-========================================================= */
+// ===============================
+// PLAYER DATA
+// ===============================
+
+let playerData = JSON.parse(
+    localStorage.getItem("blockdropPlayer")
+) || {
+    xp: 0,
+    level: 1,
+    totalGames: 0,
+    totalScore: 0,
+    totalLines: 0,
+    bestScore: 0,
+    perfectClears: 0
+};
+
+
+// ===============================
+// MISSIONS
+// ===============================
+
+let missions = JSON.parse(
+    localStorage.getItem("blockdropMissions")
+) || {
+    lines: 0,
+    score: 0,
+    games: 0
+};
+
+
+// ===============================
+// SETTINGS
+// ===============================
 
 let settings = JSON.parse(
     localStorage.getItem("blockdropSettings")
 ) || {
-
     sound: true,
     shake: true,
     reducedMotion: false
-
 };
 
-function saveSettings() {
 
-    localStorage.setItem(
-        "blockdropSettings",
-        JSON.stringify(settings)
-    );
+// ===============================
+// TETROMINOES
+// ===============================
 
-}
+const PIECES = {
+    I: {
+        color: "#00e5ff",
+        shape: [
+            [1, 1, 1, 1]
+        ]
+    },
 
+    O: {
+        color: "#ffd600",
+        shape: [
+            [1, 1],
+            [1, 1]
+        ]
+    },
 
-/* =========================================================
-   GLOBAL STATISTICS
-========================================================= */
+    T: {
+        color: "#b44cff",
+        shape: [
+            [0, 1, 0],
+            [1, 1, 1]
+        ]
+    },
 
-let statistics = JSON.parse(
-    localStorage.getItem("blockdropStatistics")
-) || {
+    S: {
+        color: "#00e676",
+        shape: [
+            [0, 1, 1],
+            [1, 1, 0]
+        ]
+    },
 
-    totalGames: 0,
-    totalScore: 0,
-    totalLines: 0,
-    bestCombo: 0,
-    perfectClears: 0
+    Z: {
+        color: "#ff3d71",
+        shape: [
+            [1, 1, 0],
+            [0, 1, 1]
+        ]
+    },
 
+    J: {
+        color: "#2979ff",
+        shape: [
+            [1, 0, 0],
+            [1, 1, 1]
+        ]
+    },
+
+    L: {
+        color: "#ff9100",
+        shape: [
+            [0, 0, 1],
+            [1, 1, 1]
+        ]
+    }
 };
 
-function saveStatistics() {
+const PIECE_KEYS = Object.keys(PIECES);
 
-    localStorage.setItem(
-        "blockdropStatistics",
-        JSON.stringify(statistics)
-    );
 
-}
+// ===============================
+// BOARD
+// ===============================
 
-
-/* =========================================================
-   ACHIEVEMENTS
-========================================================= */
-
-const ACHIEVEMENTS = {
-
-    FIRST_DROP: {
-        title: "FIRST DROP",
-        description: "Start your first game."
-    },
-
-    COMBO_5: {
-        title: "COMBO MASTER",
-        description: "Reach a 5x combo."
-    },
-
-    LINE_MASTER: {
-        title: "LINE MASTER",
-        description: "Clear 100 lines."
-    },
-
-    SCORE_10K: {
-        title: "10K CLUB",
-        description: "Reach 10,000 points."
-    },
-
-    PERFECT_CLEAR: {
-        title: "PERFECT CLEAR",
-        description: "Clear the entire board."
-    }
-
-};
-
-let unlockedAchievements = JSON.parse(
-    localStorage.getItem("blockdropAchievements")
-) || {};
-
-
-function unlockAchievement(id) {
-
-    if (unlockedAchievements[id]) {
-        return;
-    }
-
-    unlockedAchievements[id] = true;
-
-    localStorage.setItem(
-        "blockdropAchievements",
-        JSON.stringify(unlockedAchievements)
-    );
-
-    showAchievement(
-        ACHIEVEMENTS[id].title
-    );
-
-}
-
-
-function showAchievement(title) {
-
-    const titleEl =
-        document.getElementById("achievementTitle");
-
-    titleEl.textContent = title;
-
-    achievementToast.classList.add("show");
-
-    playSound("achievement");
-
-    setTimeout(() => {
-
-        achievementToast.classList.remove("show");
-
-    }, 3000);
-
-}
-
-
-/* =========================================================
-   AUDIO
-========================================================= */
-
-let audioContext = null;
-
-function getAudioContext() {
-
-    if (!audioContext) {
-
-        audioContext =
-            new (window.AudioContext ||
-            window.webkitAudioContext)();
-
-    }
-
-    return audioContext;
-
-}
-
-
-function playSound(type) {
-
-    if (!settings.sound) {
-        return;
-    }
-
-    try {
-
-        const ctx = getAudioContext();
-
-        const oscillator =
-            ctx.createOscillator();
-
-        const gain =
-            ctx.createGain();
-
-        oscillator.connect(gain);
-        gain.connect(ctx.destination);
-
-        const now = ctx.currentTime;
-
-        const sounds = {
-
-            move: [180, 0.04],
-            rotate: [280, 0.05],
-            drop: [100, 0.08],
-            clear: [500, 0.12],
-            combo: [700, 0.15],
-            level: [900, 0.2],
-            achievement: [1000, 0.3],
-            gameover: [80, 0.3]
-
-        };
-
-        const [frequency, duration] =
-            sounds[type] || sounds.move;
-
-        oscillator.frequency.setValueAtTime(
-            frequency,
-            now
-        );
-
-        oscillator.type = "sine";
-
-        gain.gain.setValueAtTime(
-            0.001,
-            now
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            0.08,
-            now + 0.01
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            now + duration
-        );
-
-        oscillator.start(now);
-        oscillator.stop(now + duration);
-
-    } catch (error) {
-
-        console.log("Audio unavailable.");
-
-    }
-
-}
-
-
-/* =========================================================
-   BOARD
-========================================================= */
-
-function createEmptyBoard() {
-
+function createBoard() {
     return Array.from(
         { length: ROWS },
-        () => Array(COLS).fill(null)
+        () => Array(COLS).fill(0)
     );
-
 }
 
 
-function buildBoardDOM() {
-
-    gameBoard.innerHTML = "";
-
-    for (let i = 0; i < ROWS * COLS; i++) {
-
-        const cell =
-            document.createElement("div");
-
-        cell.className = "cell";
-
-        gameBoard.appendChild(cell);
-
-    }
-
-}
-
-
-function renderBoard() {
-
-    const cells =
-        gameBoard.children;
-
-    for (let r = 0; r < ROWS; r++) {
-
-        for (let c = 0; c < COLS; c++) {
-
-            const index =
-                r * COLS + c;
-
-            const cell =
-                cells[index];
-
-            cell.className = "cell";
-            cell.style.removeProperty(
-                "--piece-color"
-            );
-
-            if (board[r][c]) {
-
-                cell.classList.add("filled");
-
-                cell.style.setProperty(
-                    "--piece-color",
-                    board[r][c]
-                );
-
-            }
-
-        }
-
-    }
-
-    renderCurrentPiece();
-    renderGhostPiece();
-
-}
-
-
-/* =========================================================
-   PIECES
-========================================================= */
+// ===============================
+// RANDOM PIECE
+// ===============================
 
 function randomPiece() {
 
     const key =
         PIECE_KEYS[
-            Math.floor(
-                Math.random() * PIECE_KEYS.length
-            )
+            Math.floor(Math.random() * PIECE_KEYS.length)
         ];
 
-    const source = PIECES[key];
+    const data = PIECES[key];
 
     return {
-
-        type: key,
-
-        color: source.color,
-
-        shape: source.shape.map(
-            row => [...row]
+        key,
+        color: data.color,
+        shape: data.shape.map(row => [...row]),
+        x: Math.floor(
+            (COLS - data.shape[0].length) / 2
         ),
-
-        row: 0,
-
-        col:
-            Math.floor(
-                (COLS - source.shape[0].length) / 2
-            )
-
+        y: 0
     };
-
 }
 
 
-function spawnPiece() {
+// ===============================
+// START GAME
+// ===============================
 
-    currentPiece =
-        nextPiece || randomPiece();
+function startGame(mode = gameMode, diff = difficulty) {
 
-    nextPiece =
-        randomPiece();
+    gameMode = mode;
+    difficulty = diff;
 
-    currentPiece.row = 0;
+    board = createBoard();
 
-    currentPiece.col =
-        Math.floor(
-            (COLS -
-                currentPiece.shape[0].length) / 2
-        );
+    currentPiece = randomPiece();
+    nextPiece = randomPiece();
+    holdPiece = null;
 
     canHold = true;
 
-    if (
-        collision(
-            currentPiece,
-            0,
-            0,
-            currentPiece.shape
-        )
-    ) {
+    score = 0;
+    lines = 0;
+    level = 1;
+    combo = 0;
 
-        endGame();
+    gameTimer = 0;
 
+    gameRunning = true;
+    gamePaused = false;
+    gameOver = false;
+
+    playerData.totalGames++;
+
+    missions.games++;
+
+    savePlayerData();
+    saveMissions();
+
+    updateUI();
+    updateNextPreview();
+    updateHoldPreview();
+
+    hideOverlay();
+
+    clearInterval(timerInterval);
+
+    if (gameMode === "time") {
+
+        timerInterval = setInterval(() => {
+
+            if (!gameRunning || gamePaused) return;
+
+            gameTimer++;
+
+            if (gameTimer >= 180) {
+                endGame();
+            }
+
+        }, 1000);
     }
 
-    renderNext();
-    renderHold();
+    lastTime = performance.now();
 
+    cancelAnimationFrame(animationFrame);
+
+    animationFrame =
+        requestAnimationFrame(gameLoop);
 }
 
 
-/* =========================================================
-   COLLISION
-========================================================= */
+// ===============================
+// GAME LOOP
+// ===============================
 
-function collision(
-    piece,
-    rowOffset = 0,
-    colOffset = 0,
-    shape = piece.shape
-) {
+function gameLoop(time = 0) {
 
-    for (let r = 0; r < shape.length; r++) {
+    if (!gameRunning) return;
 
-        for (let c = 0; c < shape[r].length; c++) {
+    const delta =
+        time - lastTime;
 
-            if (!shape[r][c]) {
-                continue;
-            }
+    lastTime = time;
 
-            const row =
-                piece.row + r + rowOffset;
+    if (!gamePaused) {
 
-            const col =
-                piece.col + c + colOffset;
+        dropCounter += delta;
 
-            if (col < 0 || col >= COLS) {
-                return true;
-            }
+        const speed = getDropSpeed();
 
-            if (row >= ROWS) {
+        if (dropCounter >= speed) {
+
+            moveDown();
+
+            dropCounter = 0;
+        }
+
+        draw();
+    }
+
+    animationFrame =
+        requestAnimationFrame(gameLoop);
+}
+
+
+// ===============================
+// DROP SPEED
+// ===============================
+
+function getDropSpeed() {
+
+    let base = 800;
+
+    if (difficulty === "hard") {
+        base = 550;
+    }
+
+    if (difficulty === "insane") {
+        base = 350;
+    }
+
+    return Math.max(
+        80,
+        base - (level - 1) * 55
+    );
+}
+
+
+// ===============================
+// COLLISION
+// ===============================
+
+function collision(piece, boardData) {
+
+    for (
+        let y = 0;
+        y < piece.shape.length;
+        y++
+    ) {
+
+        for (
+            let x = 0;
+            x < piece.shape[y].length;
+            x++
+        ) {
+
+            if (!piece.shape[y][x]) continue;
+
+            const boardX =
+                piece.x + x;
+
+            const boardY =
+                piece.y + y;
+
+            if (
+                boardX < 0 ||
+                boardX >= COLS ||
+                boardY >= ROWS
+            ) {
                 return true;
             }
 
             if (
-                row >= 0 &&
-                board[row][col]
+                boardY >= 0 &&
+                boardData[boardY][boardX]
             ) {
-
                 return true;
-
             }
-
         }
-
     }
 
     return false;
-
 }
 
 
-/* =========================================================
-   MOVEMENT
-========================================================= */
+// ===============================
+// MERGE PIECE
+// ===============================
 
-function movePiece(direction) {
+function mergePiece() {
 
-    if (!gameRunning || paused || clearingRows.length) {
-        return;
-    }
+    currentPiece.shape.forEach(
+        (row, y) => {
 
-    if (
-        !collision(
-            currentPiece,
-            0,
-            direction
-        )
-    ) {
+            row.forEach(
+                (value, x) => {
 
-        currentPiece.col += direction;
+                    if (value) {
 
-        playSound("move");
+                        const boardY =
+                            currentPiece.y + y;
 
-        renderBoard();
+                        const boardX =
+                            currentPiece.x + x;
 
-    }
+                        if (
+                            boardY >= 0 &&
+                            boardY < ROWS &&
+                            boardX >= 0 &&
+                            boardX < COLS
+                        ) {
 
+                            board[boardY][boardX] =
+                                currentPiece.color;
+                        }
+                    }
+                }
+            );
+        }
+    );
 }
 
+
+// ===============================
+// MOVE DOWN
+// ===============================
 
 function moveDown() {
 
-    if (!gameRunning || paused || clearingRows.length) {
-        return;
-    }
+    if (!gameRunning || gamePaused) return;
+
+    currentPiece.y++;
 
     if (
-        !collision(
+        collision(
             currentPiece,
-            1,
-            0
+            board
         )
     ) {
 
-        currentPiece.row++;
+        currentPiece.y--;
 
-    } else {
+        mergePiece();
 
-        lockPiece();
+        clearLines();
 
+        spawnNextPiece();
     }
-
-    renderBoard();
-
 }
 
+
+// ===============================
+// HARD DROP
+// ===============================
 
 function hardDrop() {
 
-    if (!gameRunning || paused || clearingRows.length) {
-        return;
-    }
+    if (!gameRunning || gamePaused) return;
 
     let distance = 0;
 
-    while (
-        !collision(
-            currentPiece,
-            distance + 1,
-            0
-        )
-    ) {
+    while (true) {
 
-        distance++;
-
-    }
-
-    currentPiece.row += distance;
-
-    score += distance * 2;
-
-    updateUI();
-
-    playSound("drop");
-
-    lockPiece();
-
-    renderBoard();
-
-}
-
-
-/* =========================================================
-   ROTATION
-========================================================= */
-
-function rotateMatrix(matrix) {
-
-    return matrix[0].map(
-        (_, index) =>
-            matrix
-                .map(row => row[index])
-                .reverse()
-    );
-
-}
-
-
-function rotatePiece() {
-
-    if (!gameRunning || paused || clearingRows.length) {
-        return;
-    }
-
-    const rotated =
-        rotateMatrix(
-            currentPiece.shape
-        );
-
-    const kicks =
-        [0, -1, 1, -2, 2];
-
-    for (const offset of kicks) {
+        currentPiece.y++;
 
         if (
-            !collision(
+            collision(
                 currentPiece,
-                0,
-                offset,
-                rotated
+                board
             )
         ) {
 
-            currentPiece.shape = rotated;
-            currentPiece.col += offset;
+            currentPiece.y--;
 
-            playSound("rotate");
-
-            renderBoard();
-
-            return;
-
+            break;
         }
 
+        distance++;
     }
 
+    score += distance * 2;
+
+    mergePiece();
+
+    clearLines();
+
+    spawnNextPiece();
+
+    playSound(180, 0.06);
 }
 
 
-/* =========================================================
-   HOLD
-========================================================= */
+// ===============================
+// MOVE LEFT
+// ===============================
+
+function moveLeft() {
+
+    if (!gameRunning || gamePaused) return;
+
+    currentPiece.x--;
+
+    if (
+        collision(
+            currentPiece,
+            board
+        )
+    ) {
+        currentPiece.x++;
+    }
+
+    draw();
+}
+
+
+// ===============================
+// MOVE RIGHT
+// ===============================
+
+function moveRight() {
+
+    if (!gameRunning || gamePaused) return;
+
+    currentPiece.x++;
+
+    if (
+        collision(
+            currentPiece,
+            board
+        )
+    ) {
+        currentPiece.x--;
+    }
+
+    draw();
+}
+
+
+// ===============================
+// ROTATE
+// ===============================
+
+function rotatePiece() {
+
+    if (!gameRunning || gamePaused) return;
+
+    const oldShape =
+        currentPiece.shape.map(
+            row => [...row]
+        );
+
+    const rotated =
+        currentPiece.shape[0]
+            .map(
+                (_, index) =>
+                    currentPiece.shape
+                        .map(row => row[index])
+                        .reverse()
+            );
+
+    currentPiece.shape = rotated;
+
+    if (
+        collision(
+            currentPiece,
+            board
+        )
+    ) {
+
+        currentPiece.shape = oldShape;
+
+        // simple wall kick
+        currentPiece.x++;
+
+        if (
+            collision(
+                currentPiece,
+                board
+            )
+        ) {
+
+            currentPiece.x -= 2;
+
+            if (
+                collision(
+                    currentPiece,
+                    board
+                )
+            ) {
+
+                currentPiece.x++;
+
+                currentPiece.shape =
+                    oldShape;
+            }
+        }
+    }
+
+    draw();
+}
+
+
+// ===============================
+// HOLD PIECE
+// ===============================
 
 function holdCurrentPiece() {
 
     if (
         !gameRunning ||
-        paused ||
-        !canHold ||
-        clearingRows.length
-    ) {
-        return;
-    }
-
-    const stored = currentPiece.type;
+        gamePaused ||
+        !canHold
+    ) return;
 
     if (!holdPiece) {
 
-        holdPiece = stored;
+        holdPiece = {
+            ...currentPiece,
+            shape: currentPiece.shape.map(
+                row => [...row]
+            )
+        };
 
-        spawnPiece();
+        currentPiece = nextPiece;
+
+        currentPiece.x =
+            Math.floor(
+                (COLS -
+                    currentPiece.shape[0].length) / 2
+            );
+
+        currentPiece.y = 0;
+
+        nextPiece = randomPiece();
 
     } else {
 
-        const swap =
-            holdPiece;
+        const temp = holdPiece;
 
-        holdPiece = stored;
-
-        const source =
-            PIECES[swap];
-
-        currentPiece = {
-
-            type: swap,
-
-            color: source.color,
-
-            shape: source.shape.map(
+        holdPiece = {
+            ...currentPiece,
+            shape: currentPiece.shape.map(
                 row => [...row]
-            ),
-
-            row: 0,
-
-            col:
-                Math.floor(
-                    (COLS -
-                        source.shape[0].length) / 2
-                )
-
+            )
         };
 
+        currentPiece = {
+            ...temp,
+            shape: temp.shape.map(
+                row => [...row]
+            )
+        };
+
+        currentPiece.x =
+            Math.floor(
+                (COLS -
+                    currentPiece.shape[0].length) / 2
+            );
+
+        currentPiece.y = 0;
     }
 
     canHold = false;
 
-    playSound("rotate");
+    updateHoldPreview();
+    updateNextPreview();
 
-    renderHold();
-    renderBoard();
-
+    draw();
 }
 
 
-/* =========================================================
-   LOCK PIECE
-========================================================= */
+// ===============================
+// SPAWN NEXT PIECE
+// ===============================
 
-function lockPiece() {
+function spawnNextPiece() {
 
-    for (
-        let r = 0;
-        r < currentPiece.shape.length;
-        r++
-    ) {
+    currentPiece = nextPiece;
 
-        for (
-            let c = 0;
-            c < currentPiece.shape[r].length;
-            c++
-        ) {
-
-            if (!currentPiece.shape[r][c]) {
-                continue;
-            }
-
-            const row =
-                currentPiece.row + r;
-
-            const col =
-                currentPiece.col + c;
-
-            if (
-                row >= 0 &&
-                row < ROWS &&
-                col >= 0 &&
-                col < COLS
-            ) {
-
-                board[row][col] =
-                    currentPiece.color;
-
-            }
-
-        }
-
-    }
-
-    unlockAchievement("FIRST_DROP");
-
-    checkLines();
-
-}
-
-
-/* =========================================================
-   LINE CLEAR
-========================================================= */
-
-function checkLines() {
-
-    clearingRows = [];
-
-    for (let r = 0; r < ROWS; r++) {
-
-        if (
-            board[r].every(cell => cell)
-        ) {
-
-            clearingRows.push(r);
-
-        }
-
-    }
-
-    if (!clearingRows.length) {
-
-        combo = 0;
-
-        spawnPiece();
-
-        renderBoard();
-
-        return;
-
-    }
-
-    combo++;
-
-    bestComboSession =
-        Math.max(
-            bestComboSession,
-            combo
-        );
-
-    statistics.totalLines +=
-        clearingRows.length;
-
-    lines += clearingRows.length;
-
-    const count =
-        clearingRows.length;
-
-    const baseScore = {
-
-        1: 100,
-        2: 300,
-        3: 500,
-        4: 800
-
-    }[count] || 800;
-
-    const comboBonus =
-        combo > 1
-            ? combo * 50
-            : 0;
-
-    score +=
-        (baseScore + comboBonus) *
-        level;
-
-    lineFlash.classList.remove("active");
-
-    void lineFlash.offsetWidth;
-
-    lineFlash.classList.add("active");
-
-    showMessage(
-        count === 4
-            ? "TETRIS!"
-            : combo > 1
-                ? `${combo}X COMBO`
-                : `+${count} LINE`
-    );
-
-    playSound(
-        combo > 1
-            ? "combo"
-            : "clear"
-    );
-
-    if (settings.shake) {
-
-        document.body.classList.remove("shake");
-
-        void document.body.offsetWidth;
-
-        document.body.classList.add("shake");
-
-    }
-
-    if (combo >= 5) {
-
-        unlockAchievement("COMBO_5");
-
-    }
-
-    if (lines >= 100) {
-
-        unlockAchievement("LINE_MASTER");
-
-    }
-
-    if (score >= 10000) {
-
-        unlockAchievement("SCORE_10K");
-
-    }
-
-    clearingRows.forEach(row => {
-
-        for (let c = 0; c < COLS; c++) {
-
-            board[row][c] = null;
-
-        }
-
-    });
-
-    clearTimer = setTimeout(() => {
-
-        removeClearedRows();
-
-    }, 180);
-
-    updateLevel();
-
-    updateUI();
-
-}
-
-
-function removeClearedRows() {
-
-    board =
-        board.filter(
-            (_, index) =>
-                !clearingRows.includes(index)
-        );
-
-    while (board.length < ROWS) {
-
-        board.unshift(
-            Array(COLS).fill(null)
-        );
-
-    }
-
-    const isPerfectClear =
-        board.every(
-            row =>
-                row.every(
-                    cell => !cell
-                )
-        );
-
-    if (isPerfectClear) {
-
-        score += 2000 * level;
-
-        statistics.perfectClears++;
-
-        unlockAchievement("PERFECT_CLEAR");
-
-        showMessage("PERFECT CLEAR!");
-
-    }
-
-    clearingRows = [];
-
-    spawnPiece();
-
-    renderBoard();
-
-    updateUI();
-
-}
-
-
-/* =========================================================
-   LEVEL
-========================================================= */
-
-function updateLevel() {
-
-    const newLevel =
-        Math.floor(lines / 10) + 1;
-
-    if (newLevel > level) {
-
-        level = newLevel;
-
-        playSound("level");
-
-        showMessage(
-            `LEVEL ${level}`
-        );
-
-        startDropTimer();
-
-    }
-
-}
-
-
-/* =========================================================
-   SPEED
-========================================================= */
-
-function getDropSpeed() {
-
-    const difficultyMultiplier = {
-
-        normal: 1,
-        hard: 0.72,
-        insane: 0.48
-
-    }[difficulty];
-
-    const base =
-        Math.max(
-            100,
-            850 -
-            (level - 1) * 65
-        );
-
-    return base * difficultyMultiplier;
-
-}
-
-
-function startDropTimer() {
-
-    clearInterval(dropTimer);
-
-    dropTimer =
-        setInterval(
-            moveDown,
-            getDropSpeed()
-        );
-
-}
-
-
-/* =========================================================
-   TIMER
-========================================================= */
-
-function startTimeAttack() {
-
-    clearInterval(timeTimer);
-
-    timeRemaining = 180;
-
-    updateTimer();
-
-    timeTimer =
-        setInterval(() => {
-
-            if (!gameRunning || paused) {
-                return;
-            }
-
-            timeRemaining--;
-
-            updateTimer();
-
-            if (timeRemaining <= 0) {
-
-                endGame();
-
-            }
-
-        }, 1000);
-
-}
-
-
-function updateTimer() {
-
-    if (gameMode !== "time") {
-
-        timerEl.textContent = "∞";
-
-        return;
-
-    }
-
-    const minutes =
+    currentPiece.x =
         Math.floor(
-            timeRemaining / 60
+            (COLS -
+                currentPiece.shape[0].length) / 2
         );
 
-    const seconds =
-        timeRemaining % 60;
+    currentPiece.y = 0;
 
-    timerEl.textContent =
-        `${minutes}:${String(seconds).padStart(2,"0")}`;
+    nextPiece = randomPiece();
 
-}
+    canHold = true;
 
+    updateNextPreview();
+    updateHoldPreview();
 
-/* =========================================================
-   PREVIEWS
-========================================================= */
-
-function renderPreview(
-    container,
-    pieceType
-) {
-
-    container.innerHTML = "";
-
-    if (!pieceType) {
-        return;
-    }
-
-    const source =
-        PIECES[pieceType];
-
-    for (let r = 0; r < 16; r++) {
-
-        const cell =
-            document.createElement("div");
-
-        cell.className =
-            "preview-cell";
-
-        const row =
-            Math.floor(r / 4);
-
-        const col =
-            r % 4;
-
-        if (
-            source.shape[row] &&
-            source.shape[row][col]
-        ) {
-
-            cell.classList.add("active");
-
-            cell.style.setProperty(
-                "--piece-color",
-                source.color
-            );
-
-        }
-
-        container.appendChild(cell);
-
-    }
-
-}
-
-
-function renderNext() {
-
-    renderPreview(
-        nextPieceEl,
-        nextPiece?.type
-    );
-
-}
-
-
-function renderHold() {
-
-    renderPreview(
-        holdPieceEl,
-        holdPiece
-    );
-
-}
-
-
-/* =========================================================
-   CURRENT / GHOST RENDER
-========================================================= */
-
-function renderCurrentPiece() {
-
-    if (!currentPiece) {
-        return;
-    }
-
-    const cells =
-        gameBoard.children;
-
-    for (
-        let r = 0;
-        r < currentPiece.shape.length;
-        r++
-    ) {
-
-        for (
-            let c = 0;
-            c < currentPiece.shape[r].length;
-            c++
-        ) {
-
-            if (!currentPiece.shape[r][c]) {
-                continue;
-            }
-
-            const row =
-                currentPiece.row + r;
-
-            const col =
-                currentPiece.col + c;
-
-            if (
-                row >= 0 &&
-                row < ROWS &&
-                col >= 0 &&
-                col < COLS
-            ) {
-
-                const cell =
-                    cells[row * COLS + col];
-
-                cell.classList.add("filled");
-
-                cell.style.setProperty(
-                    "--piece-color",
-                    currentPiece.color
-                );
-
-            }
-
-        }
-
-    }
-
-}
-
-
-function renderGhostPiece() {
-
-    if (!currentPiece) {
-        return;
-    }
-
-    let distance = 0;
-
-    while (
-        !collision(
+    if (
+        collision(
             currentPiece,
-            distance + 1,
-            0
+            board
         )
     ) {
-
-        distance++;
-
+        endGame();
     }
-
-    const cells =
-        gameBoard.children;
-
-    for (
-        let r = 0;
-        r < currentPiece.shape.length;
-        r++
-    ) {
-
-        for (
-            let c = 0;
-            c < currentPiece.shape[r].length;
-            c++
-        ) {
-
-            if (!currentPiece.shape[r][c]) {
-                continue;
-            }
-
-            const row =
-                currentPiece.row +
-                r +
-                distance;
-
-            const col =
-                currentPiece.col + c;
-
-            if (
-                row >= 0 &&
-                row < ROWS &&
-                col >= 0 &&
-                col < COLS
-            ) {
-
-                const cell =
-                    cells[row * COLS + col];
-
-                if (!cell.classList.contains("filled")) {
-
-                    cell.classList.add("ghost");
-
-                }
-
-            }
-
-        }
-
-    }
-
 }
 
 
-/* =========================================================
-   UI
-========================================================= */
+// ===============================
+// CLEAR LINES
+// ===============================
+
+function clearLines() {
+
+    let cleared = 0;
+
+    for (
+        let y = ROWS - 1;
+        y >= 0;
+        y--
+    ) {
+
+        if (
+            board[y].every(
+                cell => cell !== 0
+            )
+        ) {
+
+            board.splice(y, 1);
+
+            board.unshift(
+                Array(COLS).fill(0)
+            );
+
+            cleared++;
+
+            y++;
+        }
+    }
+
+    if (cleared > 0) {
+
+        combo++;
+
+        lines += cleared;
+
+        const lineScores = {
+            1: 100,
+            2: 300,
+            3: 500,
+            4: 800
+        };
+
+        let gained =
+            lineScores[cleared] ||
+            cleared * 250;
+
+        gained *= level;
+
+        if (combo > 1) {
+            gained += combo * 50;
+        }
+
+        score += gained;
+
+        playerData.totalScore += gained;
+        playerData.totalLines += cleared;
+
+        missions.lines += cleared;
+        missions.score += gained;
+
+        const newLevel =
+            Math.floor(lines / 10) + 1;
+
+        if (newLevel > level) {
+
+            level = newLevel;
+
+            addXP(100);
+
+            showLevelUp();
+        }
+
+        addXP(
+            cleared * 25 +
+            combo * 10
+        );
+
+        playSound(
+            500 + cleared * 100,
+            0.1
+        );
+
+    } else {
+
+        combo = 0;
+    }
+
+    updateMissions();
+
+    savePlayerData();
+    saveMissions();
+
+    updateUI();
+}
+
+
+// ===============================
+// GHOST PIECE
+// ===============================
+
+function getGhostPiece() {
+
+    if (!currentPiece) return null;
+
+    const ghost = {
+        ...currentPiece,
+        shape: currentPiece.shape.map(
+            row => [...row]
+        )
+    };
+
+    while (true) {
+
+        ghost.y++;
+
+        if (
+            collision(
+                ghost,
+                board
+            )
+        ) {
+
+            ghost.y--;
+
+            break;
+        }
+    }
+
+    return ghost;
+}
+
+
+// ===============================
+// DRAW GAME
+// ===============================
+
+function draw() {
+
+    if (!ctx) return;
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    drawBoard();
+
+    if (currentPiece) {
+
+        const ghost =
+            getGhostPiece();
+
+        if (ghost) {
+            drawPiece(
+                ghost,
+                true
+            );
+        }
+
+        drawPiece(
+            currentPiece,
+            false
+        );
+    }
+}
+
+
+// ===============================
+// DRAW BOARD
+// ===============================
+
+function drawBoard() {
+
+    for (
+        let y = 0;
+        y < ROWS;
+        y++
+    ) {
+
+        for (
+            let x = 0;
+            x < COLS;
+            x++
+        ) {
+
+            const value =
+                board[y][x];
+
+            if (value) {
+
+                drawBlock(
+                    x,
+                    y,
+                    value
+                );
+            } else {
+
+                ctx.strokeStyle =
+                    "rgba(255,255,255,0.035)";
+
+                ctx.strokeRect(
+                    x * BLOCK_SIZE,
+                    y * BLOCK_SIZE,
+                    BLOCK_SIZE,
+                    BLOCK_SIZE
+                );
+            }
+        }
+    }
+}
+
+
+// ===============================
+// DRAW PIECE
+// ===============================
+
+function drawPiece(
+    piece,
+    ghost = false
+) {
+
+    piece.shape.forEach(
+        (row, y) => {
+
+            row.forEach(
+                (value, x) => {
+
+                    if (!value) return;
+
+                    const px =
+                        piece.x + x;
+
+                    const py =
+                        piece.y + y;
+
+                    if (py < 0) return;
+
+                    if (ghost) {
+
+                        ctx.fillStyle =
+                            "rgba(255,255,255,0.08)";
+
+                        ctx.strokeStyle =
+                            "rgba(255,255,255,0.35)";
+
+                        ctx.strokeRect(
+                            px * BLOCK_SIZE + 2,
+                            py * BLOCK_SIZE + 2,
+                            BLOCK_SIZE - 4,
+                            BLOCK_SIZE - 4
+                        );
+
+                        return;
+                    }
+
+                    drawBlock(
+                        px,
+                        py,
+                        piece.color
+                    );
+                }
+            );
+        }
+    );
+}
+
+
+// ===============================
+// DRAW BLOCK
+// ===============================
+
+function drawBlock(
+    x,
+    y,
+    color
+) {
+
+    const px =
+        x * BLOCK_SIZE;
+
+    const py =
+        y * BLOCK_SIZE;
+
+    ctx.fillStyle = color;
+
+    ctx.fillRect(
+        px + 2,
+        py + 2,
+        BLOCK_SIZE - 4,
+        BLOCK_SIZE - 4
+    );
+
+    ctx.fillStyle =
+        "rgba(255,255,255,0.25)";
+
+    ctx.fillRect(
+        px + 4,
+        py + 4,
+        BLOCK_SIZE - 8,
+        4
+    );
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,0.35)";
+
+    ctx.strokeRect(
+        px + 2,
+        py + 2,
+        BLOCK_SIZE - 4,
+        BLOCK_SIZE - 4
+    );
+}
+
+
+// ===============================
+// PREVIEW
+// ===============================
+
+function drawPreview(
+    previewCanvas,
+    piece
+) {
+
+    if (!previewCanvas) return;
+
+    const previewCtx =
+        previewCanvas.getContext("2d");
+
+    previewCtx.clearRect(
+        0,
+        0,
+        previewCanvas.width,
+        previewCanvas.height
+    );
+
+    if (!piece) return;
+
+    const size = 24;
+
+    const width =
+        piece.shape[0].length * size;
+
+    const height =
+        piece.shape.length * size;
+
+    const offsetX =
+        (previewCanvas.width - width) / 2;
+
+    const offsetY =
+        (previewCanvas.height - height) / 2;
+
+    piece.shape.forEach(
+        (row, y) => {
+
+            row.forEach(
+                (value, x) => {
+
+                    if (!value) return;
+
+                    previewCtx.fillStyle =
+                        piece.color;
+
+                    previewCtx.fillRect(
+                        offsetX +
+                            x * size +
+                            2,
+                        offsetY +
+                            y * size +
+                            2,
+                        size - 4,
+                        size - 4
+                    );
+                }
+            );
+        }
+    );
+}
+
+
+function updateNextPreview() {
+
+    drawPreview(
+        nextCanvas,
+        nextPiece
+    );
+}
+
+
+function updateHoldPreview() {
+
+    drawPreview(
+        holdCanvas,
+        holdPiece
+    );
+}
+
+
+// ===============================
+// SCORE / UI
+// ===============================
 
 function updateUI() {
 
-    scoreEl.textContent =
-        score.toLocaleString();
+    if (scoreEl)
+        scoreEl.textContent =
+            score.toLocaleString();
 
-    levelEl.textContent =
-        level;
+    if (linesEl)
+        linesEl.textContent =
+            lines;
 
-    linesEl.textContent =
-        lines;
+    if (levelEl)
+        levelEl.textContent =
+            level;
 
-    comboEl.textContent =
-        combo;
+    if (comboEl)
+        comboEl.textContent =
+            combo;
 
-    updateTimer();
-
-    updateMenuStats();
-
+    updateXPUI();
 }
 
 
-function showMessage(text) {
+// ===============================
+// XP SYSTEM
+// ===============================
 
-    messageEl.textContent = text;
+function addXP(amount) {
 
-    messageEl.classList.remove("show");
+    if (amount <= 0) return;
 
-    void messageEl.offsetWidth;
+    playerData.xp += amount;
 
-    messageEl.classList.add("show");
+    while (
+        playerData.xp >=
+        getXPRequired(playerData.level)
+    ) {
 
+        playerData.xp -=
+            getXPRequired(
+                playerData.level
+            );
+
+        playerData.level++;
+
+        showLevelUp();
+    }
+
+    savePlayerData();
+    updateXPUI();
 }
 
 
-/* =========================================================
-   START GAME
-========================================================= */
+function getXPRequired(playerLevel) {
 
-function startGame() {
-
-    clearInterval(dropTimer);
-    clearInterval(timeTimer);
-
-    board =
-        createEmptyBoard();
-
-    score = 0;
-    level = 1;
-    lines = 0;
-    combo = 0;
-    bestComboSession = 0;
-
-    holdPiece = null;
-    nextPiece = null;
-    canHold = true;
-
-    gameRunning = true;
-    paused = false;
-
-    gameOverOverlay.classList.remove("active");
-    pauseOverlay.classList.remove("active");
-
-    menuScreen.classList.remove("active");
-    gameScreen.classList.add("active");
-
-    modeLabel.textContent =
-        gameMode.toUpperCase();
-
-    difficultyLabel.textContent =
-        difficulty.toUpperCase();
-
-    buildBoardDOM();
-
-    nextPiece =
-        randomPiece();
-
-    spawnPiece();
-
-    renderBoard();
-
-    updateUI();
-
-    startDropTimer();
-
-    statistics.totalGames++;
-
-    saveStatistics();
-
-    if (gameMode === "time") {
-
-        startTimeAttack();
-
-    }
-
+    return 500 +
+        (playerLevel - 1) * 250;
 }
 
 
-/* =========================================================
-   PAUSE
-========================================================= */
+function updateXPUI() {
 
-function togglePause() {
+    if (!xpBar && !xpText) return;
 
-    if (!gameRunning) {
-        return;
-    }
-
-    paused = !paused;
-
-    pauseOverlay.classList.toggle(
-        "active",
-        paused
-    );
-
-}
-
-
-/* =========================================================
-   END GAME
-========================================================= */
-
-function endGame() {
-
-    if (!gameRunning) {
-        return;
-    }
-
-    gameRunning = false;
-    paused = false;
-
-    clearInterval(dropTimer);
-    clearInterval(timeTimer);
-
-    if (clearTimer) {
-        clearTimeout(clearTimer);
-    }
-
-    statistics.totalScore += score;
-
-    statistics.bestCombo =
-        Math.max(
-            statistics.bestCombo,
-            bestComboSession
+    const required =
+        getXPRequired(
+            playerData.level
         );
 
-    saveStatistics();
+    const percent =
+        Math.min(
+            100,
+            (playerData.xp / required) * 100
+        );
 
-    const best =
-        getBest(gameMode);
+    if (xpBar) {
+        xpBar.style.width =
+            `${percent}%`;
+    }
 
-    if (score > best) {
+    if (xpText) {
+        xpText.textContent =
+            `${playerData.xp} / ${required} XP`;
+    }
 
-        localStorage.setItem(
-            `blockdropBest_${gameMode}`,
+    if (playerLevelEl) {
+        playerLevelEl.textContent =
+            playerData.level;
+    }
+}
+
+
+// ===============================
+// MISSIONS
+// ===============================
+
+function updateMissions() {
+
+    let completed = false;
+
+    if (
+        missions.lines >= 50
+    ) {
+        completed = true;
+    }
+
+    if (
+        missions.score >= 10000
+    ) {
+        completed = true;
+    }
+
+    if (
+        missions.games >= 10
+    ) {
+        completed = true;
+    }
+
+    if (completed) {
+
+        addXP(200);
+
+        missions.lines = 0;
+        missions.score = 0;
+        missions.games = 0;
+
+        saveMissions();
+
+        showAchievement(
+            "MISSION COMPLETE",
+            "You completed a mission!"
+        );
+    }
+}
+
+
+function saveMissions() {
+
+    localStorage.setItem(
+        "blockdropMissions",
+        JSON.stringify(missions)
+    );
+}
+
+
+// ===============================
+// PLAYER STORAGE
+// ===============================
+
+function savePlayerData() {
+
+    playerData.bestScore =
+        Math.max(
+            playerData.bestScore,
             score
         );
 
-    }
-
-    document.getElementById(
-        "finalScore"
-    ).textContent =
-        score.toLocaleString();
-
-    document.getElementById(
-        "finalHighScore"
-    ).textContent =
-        getBest(gameMode).toLocaleString();
-
-    document.getElementById(
-        "finalLevel"
-    ).textContent =
-        level;
-
-    document.getElementById(
-        "finalLines"
-    ).textContent =
-        lines;
-
-    document.getElementById(
-        "finalCombo"
-    ).textContent =
-        bestComboSession;
-
-    gameOverOverlay.classList.add("active");
-
-    playSound("gameover");
-
-    updateStatisticsUI();
-
+    localStorage.setItem(
+        "blockdropPlayer",
+        JSON.stringify(playerData)
+    );
 }
 
 
-/* =========================================================
-   BEST SCORE
-========================================================= */
+// ===============================
+// BEST SCORE
+// ===============================
 
 function getBest(mode) {
 
     return Number(
         localStorage.getItem(
             `blockdropBest_${mode}`
-        ) || 0
-    );
-
+        )
+    ) || 0;
 }
 
 
-/* =========================================================
-   MENU
-========================================================= */
+function saveBest(mode, value) {
 
-function goToMenu() {
+    const oldBest =
+        getBest(mode);
+
+    if (value > oldBest) {
+
+        localStorage.setItem(
+            `blockdropBest_${mode}`,
+            value
+        );
+
+        return value;
+    }
+
+    return oldBest;
+}
+
+
+// ===============================
+// END GAME
+// ===============================
+
+function endGame() {
+
+    if (!gameRunning) return;
 
     gameRunning = false;
-    paused = false;
+    gameOver = true;
 
-    clearInterval(dropTimer);
-    clearInterval(timeTimer);
+    clearInterval(timerInterval);
 
-    gameOverOverlay.classList.remove("active");
-    pauseOverlay.classList.remove("active");
-
-    gameScreen.classList.remove("active");
-    menuScreen.classList.add("active");
-
-    updateMenuStats();
-
-}
-
-
-function updateMenuStats() {
+    animationFrame =
+        cancelAnimationFrame(
+            animationFrame
+        );
 
     const best =
-        getBest(gameMode);
-
-    document.getElementById(
-        "menuBestScore"
-    ).textContent =
-        best.toLocaleString();
-
-    document.getElementById(
-        "menuBestCombo"
-    ).textContent =
-        statistics.bestCombo;
-
-    document.getElementById(
-        "menuLines"
-    ).textContent =
-        statistics.totalLines;
-
-}
-
-
-/* =========================================================
-   SETTINGS UI
-========================================================= */
-
-function updateSettingsUI() {
-
-    document
-        .querySelectorAll(".toggle")
-        .forEach(toggle => {
-
-            const setting =
-                toggle.dataset.setting;
-
-            toggle.classList.toggle(
-                "active",
-                Boolean(settings[setting])
-            );
-
-        });
-
-    document.body.classList.toggle(
-        "reduced-motion",
-        settings.reducedMotion
-    );
-
-}
-
-
-function openSettings() {
-
-    updateSettingsUI();
-
-    settingsOverlay.classList.add("active");
-
-}
-
-
-function closeSettings() {
-
-    settingsOverlay.classList.remove(
-        "active"
-    );
-
-}
-
-
-/* =========================================================
-   STATISTICS UI
-========================================================= */
-
-function updateStatisticsUI() {
-
-    document.getElementById(
-        "totalGames"
-    ).textContent =
-        statistics.totalGames;
-
-    document.getElementById(
-        "totalScore"
-    ).textContent =
-        statistics.totalScore.toLocaleString();
-
-    document.getElementById(
-        "totalLines"
-    ).textContent =
-        statistics.totalLines;
-
-    document.getElementById(
-        "totalBestCombo"
-    ).textContent =
-        statistics.bestCombo;
-
-    document.getElementById(
-        "totalPerfectClears"
-    ).textContent =
-        statistics.perfectClears;
-
-    const unlocked =
-        Object.keys(unlockedAchievements)
-            .filter(
-                key =>
-                    unlockedAchievements[key]
-            ).length;
-
-    document.getElementById(
-        "achievementCount"
-    ).textContent =
-        `${unlocked}/5`;
-
-}
-
-
-/* =========================================================
-   MODE / DIFFICULTY
-========================================================= */
-
-document
-    .querySelectorAll(".mode-card")
-    .forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                document
-                    .querySelectorAll(".mode-card")
-                    .forEach(item =>
-                        item.classList.remove(
-                            "selected"
-                        )
-                    );
-
-                button.classList.add(
-                    "selected"
-                );
-
-                gameMode =
-                    button.dataset.mode;
-
-                updateMenuStats();
-
-            }
+        saveBest(
+            gameMode,
+            score
         );
 
-    });
-
-
-document
-    .querySelectorAll(".difficulty-btn")
-    .forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                document
-                    .querySelectorAll(
-                        ".difficulty-btn"
-                    )
-                    .forEach(item =>
-                        item.classList.remove(
-                            "selected"
-                        )
-                    );
-
-                button.classList.add(
-                    "selected"
-                );
-
-                difficulty =
-                    button.dataset.difficulty;
-
-            }
+    playerData.bestScore =
+        Math.max(
+            playerData.bestScore,
+            score
         );
 
-    });
+    playerData.totalScore += score;
 
-
-/* =========================================================
-   BUTTON EVENTS
-========================================================= */
-
-document
-    .getElementById("startBtn")
-    .addEventListener(
-        "click",
-        startGame
+    addXP(
+        Math.max(
+            25,
+            Math.floor(score / 10)
+        )
     );
 
+    savePlayerData();
 
-document
-    .getElementById("pauseBtn")
-    .addEventListener(
-        "click",
-        togglePause
+    if (finalScoreEl) {
+        finalScoreEl.textContent =
+            score.toLocaleString();
+    }
+
+    if (finalLinesEl) {
+        finalLinesEl.textContent =
+            lines;
+    }
+
+    if (finalHighScoreEl) {
+        finalHighScoreEl.textContent =
+            best.toLocaleString();
+    }
+
+    if (overlayTitle) {
+        overlayTitle.textContent =
+            "GAME OVER";
+    }
+
+    if (overlayMessage) {
+        overlayMessage.textContent =
+            `Score: ${score.toLocaleString()} • Best: ${best.toLocaleString()}`;
+    }
+
+    showOverlay();
+
+    updateUI();
+}
+
+
+// ===============================
+// PAUSE
+// ===============================
+
+function togglePause() {
+
+    if (
+        !gameRunning ||
+        gameOver
+    ) return;
+
+    gamePaused =
+        !gamePaused;
+
+    if (gamePaused) {
+
+        if (overlayTitle)
+            overlayTitle.textContent =
+                "PAUSED";
+
+        if (overlayMessage)
+            overlayMessage.textContent =
+                "Press P or Resume to continue.";
+
+        showOverlay();
+
+    } else {
+
+        hideOverlay();
+    }
+}
+
+
+// ===============================
+// OVERLAY
+// ===============================
+
+function showOverlay() {
+
+    if (!overlay) return;
+
+    overlay.classList.add("active");
+}
+
+
+function hideOverlay() {
+
+    if (!overlay) return;
+
+    overlay.classList.remove("active");
+}
+
+
+// ===============================
+// LEVEL UP
+// ===============================
+
+function showLevelUp() {
+
+    showAchievement(
+        "LEVEL UP!",
+        `You reached Level ${playerData.level}`
     );
 
+    playSound(
+        700,
+        0.15
+    );
+}
 
-document
-    .getElementById("resumeBtn")
-    .addEventListener(
-        "click",
-        togglePause
+
+// ===============================
+// ACHIEVEMENT MESSAGE
+// ===============================
+
+function showAchievement(
+    title,
+    message
+) {
+
+    let toast =
+        document.getElementById(
+            "achievementToast"
+        );
+
+    if (!toast) {
+
+        toast =
+            document.createElement("div");
+
+        toast.id =
+            "achievementToast";
+
+        toast.style.position =
+            "fixed";
+
+        toast.style.top =
+            "30px";
+
+        toast.style.left =
+            "50%";
+
+        toast.style.transform =
+            "translateX(-50%)";
+
+        toast.style.padding =
+            "14px 22px";
+
+        toast.style.borderRadius =
+            "14px";
+
+        toast.style.background =
+            "rgba(10,15,30,.95)";
+
+        toast.style.border =
+            "1px solid rgba(0,229,255,.5)";
+
+        toast.style.color =
+            "#fff";
+
+        toast.style.zIndex =
+            "9999";
+
+        toast.style.textAlign =
+            "center";
+
+        toast.style.boxShadow =
+            "0 15px 50px rgba(0,0,0,.45)";
+
+        document.body.appendChild(
+            toast
+        );
+    }
+
+    toast.innerHTML =
+        `<strong>${title}</strong><br>
+         <small>${message}</small>`;
+
+    toast.style.display =
+        "block";
+
+    clearTimeout(
+        toast._timer
     );
 
+    toast._timer =
+        setTimeout(() => {
 
-document
-    .getElementById("restartBtn")
-    .addEventListener(
-        "click",
-        startGame
-    );
+            toast.style.display =
+                "none";
 
-
-document
-    .getElementById("menuBtn")
-    .addEventListener(
-        "click",
-        goToMenu
-    );
+        }, 2500);
+}
 
 
-document
-    .getElementById("gameOverMenuBtn")
-    .addEventListener(
-        "click",
-        goToMenu
-    );
+// ===============================
+// SOUND
+// ===============================
 
+let audioContext = null;
 
-document
-    .getElementById("playAgainBtn")
-    .addEventListener(
-        "click",
-        startGame
-    );
+function playSound(
+    frequency = 440,
+    duration = 0.08
+) {
 
+    if (!settings.sound) return;
 
-document
-    .getElementById("settingsBtn")
-    .addEventListener(
-        "click",
-        openSettings
-    );
+    try {
 
+        if (!audioContext) {
 
-document
-    .getElementById("closeSettings")
-    .addEventListener(
-        "click",
-        closeSettings
-    );
-
-
-document
-    .getElementById("soundBtn")
-    .addEventListener(
-        "click",
-        () => {
-
-            settings.sound =
-                !settings.sound;
-
-            saveSettings();
-            updateSettingsUI();
-
+            audioContext =
+                new (
+                    window.AudioContext ||
+                    window.webkitAudioContext
+                )();
         }
-    );
 
+        const oscillator =
+            audioContext.createOscillator();
 
-document
-    .querySelectorAll(".toggle")
-    .forEach(toggle => {
+        const gain =
+            audioContext.createGain();
 
-        toggle.addEventListener(
-            "click",
-            () => {
+        oscillator.frequency.value =
+            frequency;
 
-                const setting =
-                    toggle.dataset.setting;
+        oscillator.type =
+            "sine";
 
-                settings[setting] =
-                    !settings[setting];
-
-                saveSettings();
-
-                updateSettingsUI();
-
-            }
+        gain.gain.setValueAtTime(
+            0.08,
+            audioContext.currentTime
         );
 
-    });
+        gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioContext.currentTime +
+                duration
+        );
+
+        oscillator.connect(gain);
+        gain.connect(
+            audioContext.destination
+        );
+
+        oscillator.start();
+
+        oscillator.stop(
+            audioContext.currentTime +
+                duration
+        );
+
+    } catch (error) {
+
+        console.log(
+            "Audio unavailable"
+        );
+    }
+}
 
 
-document
-    .getElementById("resetStatsBtn")
-    .addEventListener(
-        "click",
-        () => {
-
-            const confirmed =
-                confirm(
-                    "Reset all BLOCKDROP statistics and achievements?"
-                );
-
-            if (!confirmed) {
-                return;
-            }
-
-            statistics = {
-
-                totalGames: 0,
-                totalScore: 0,
-                totalLines: 0,
-                bestCombo: 0,
-                perfectClears: 0
-
-            };
-
-            unlockedAchievements = {};
-
-            localStorage.removeItem(
-                "blockdropStatistics"
-            );
-
-            localStorage.removeItem(
-                "blockdropAchievements"
-            );
-
-            saveStatistics();
-
-            updateStatisticsUI();
-            updateMenuStats();
-
-            alert(
-                "Statistics reset successfully."
-            );
-
-        }
-    );
-
-
-/* =========================================================
-   KEYBOARD CONTROLS
-========================================================= */
+// ===============================
+// KEYBOARD CONTROLS
+// ===============================
 
 document.addEventListener(
     "keydown",
     event => {
 
+        const key =
+            event.key.toLowerCase();
+
         if (
-            event.target.tagName === "INPUT" ||
-            event.target.tagName === "TEXTAREA"
+            [
+                "arrowleft",
+                "arrowright",
+                "arrowdown",
+                " ",
+                "z",
+                "x",
+                "c"
+            ].includes(key)
         ) {
-            return;
+            event.preventDefault();
         }
 
-        switch (event.code) {
-
-            case "ArrowLeft":
-                event.preventDefault();
-                movePiece(-1);
-                break;
-
-            case "ArrowRight":
-                event.preventDefault();
-                movePiece(1);
-                break;
-
-            case "ArrowDown":
-                event.preventDefault();
-                moveDown();
-                break;
-
-            case "ArrowUp":
-                event.preventDefault();
-                rotatePiece();
-                break;
-
-            case "Space":
-                event.preventDefault();
-                hardDrop();
-                break;
-
-            case "KeyC":
-                holdCurrentPiece();
-                break;
-
-            case "KeyP":
-                togglePause();
-                break;
-
-            case "Escape":
-
-                if (
-                    settingsOverlay.classList.contains(
-                        "active"
-                    )
-                ) {
-
-                    closeSettings();
-
-                } else if (gameRunning) {
-
-                    togglePause();
-
-                }
-
-                break;
-
+        if (key === "arrowleft") {
+            moveLeft();
         }
 
+        if (key === "arrowright") {
+            moveRight();
+        }
+
+        if (key === "arrowdown") {
+            moveDown();
+        }
+
+        if (key === " ") {
+            hardDrop();
+        }
+
+        if (key === "x") {
+            rotatePiece();
+        }
+
+        if (key === "z") {
+            rotatePiece();
+        }
+
+        if (key === "c") {
+            holdCurrentPiece();
+        }
+
+        if (key === "p") {
+            togglePause();
+        }
+
+        if (key === "escape") {
+            togglePause();
+        }
     }
 );
 
 
-/* =========================================================
-   MOBILE CONTROLS
-========================================================= */
+// ===============================
+// BUTTON CONNECTIONS
+// ===============================
+
+function connectButton(
+    id,
+    callback
+) {
+
+    const button =
+        document.getElementById(id);
+
+    if (button) {
+
+        button.addEventListener(
+            "click",
+            callback
+        );
+    }
+}
+
+
+// Start / restart buttons
+
+connectButton(
+    "startBtn",
+    () => startGame()
+);
+
+connectButton(
+    "restartBtn",
+    () => startGame()
+);
+
+connectButton(
+    "resumeBtn",
+    () => {
+
+        if (gamePaused) {
+            togglePause();
+        }
+    }
+);
+
+connectButton(
+    "pauseBtn",
+    togglePause
+);
+
+connectButton(
+    "menuBtn",
+    () => {
+
+        gameRunning = false;
+
+        clearInterval(
+            timerInterval
+        );
+
+        hideOverlay();
+    }
+);
+
+
+// Mobile controls
+
+connectButton(
+    "leftBtn",
+    moveLeft
+);
+
+connectButton(
+    "rightBtn",
+    moveRight
+);
+
+connectButton(
+    "downBtn",
+    moveDown
+);
+
+connectButton(
+    "rotateBtn",
+    rotatePiece
+);
+
+connectButton(
+    "dropBtn",
+    hardDrop
+);
+
+connectButton(
+    "holdBtn",
+    holdCurrentPiece
+);
+
+
+// ===============================
+// MODE BUTTONS
+// ===============================
 
 document
     .querySelectorAll(
-        ".mobile-controls button"
+        "[data-mode]"
     )
     .forEach(button => {
 
@@ -2002,49 +1785,146 @@ document
             "click",
             () => {
 
-                const action =
-                    button.dataset.action;
+                gameMode =
+                    button.dataset.mode;
 
-                if (action === "left") {
-                    movePiece(-1);
-                }
+                document
+                    .querySelectorAll(
+                        "[data-mode]"
+                    )
+                    .forEach(
+                        btn =>
+                            btn.classList.remove(
+                                "active"
+                            )
+                    );
 
-                if (action === "right") {
-                    movePiece(1);
-                }
-
-                if (action === "rotate") {
-                    rotatePiece();
-                }
-
-                if (action === "down") {
-                    moveDown();
-                }
-
-                if (action === "drop") {
-                    hardDrop();
-                }
-
+                button.classList.add(
+                    "active"
+                );
             }
         );
-
     });
 
 
-/* =========================================================
-   INITIALIZE
-========================================================= */
+// ===============================
+// DIFFICULTY BUTTONS
+// ===============================
 
-buildBoardDOM();
+document
+    .querySelectorAll(
+        "[data-difficulty]"
+    )
+    .forEach(button => {
 
-updateSettingsUI();
+        button.addEventListener(
+            "click",
+            () => {
 
-updateStatisticsUI();
+                difficulty =
+                    button.dataset.difficulty;
 
-updateMenuStats();
+                document
+                    .querySelectorAll(
+                        "[data-difficulty]"
+                    )
+                    .forEach(
+                        btn =>
+                            btn.classList.remove(
+                                "active"
+                            )
+                    );
 
-menuScreen.classList.add("active");
+                button.classList.add(
+                    "active"
+                );
+            }
+        );
+    });
+
+
+// ===============================
+// TOUCH SUPPORT
+// ===============================
+
+let touchStartX = 0;
+let touchStartY = 0;
+
+if (canvas) {
+
+    canvas.addEventListener(
+        "touchstart",
+        event => {
+
+            const touch =
+                event.touches[0];
+
+            touchStartX =
+                touch.clientX;
+
+            touchStartY =
+                touch.clientY;
+        },
+        { passive: true }
+    );
+
+
+    canvas.addEventListener(
+        "touchend",
+        event => {
+
+            const touch =
+                event.changedTouches[0];
+
+            const dx =
+                touch.clientX -
+                touchStartX;
+
+            const dy =
+                touch.clientY -
+                touchStartY;
+
+            const minSwipe = 30;
+
+            if (
+                Math.abs(dx) >
+                Math.abs(dy)
+            ) {
+
+                if (dx > minSwipe) {
+                    moveRight();
+                }
+
+                if (dx < -minSwipe) {
+                    moveLeft();
+                }
+
+            } else {
+
+                if (dy > minSwipe) {
+                    moveDown();
+                }
+
+                if (dy < -minSwipe) {
+                    rotatePiece();
+                }
+            }
+        },
+        { passive: true }
+    );
+}
+
+
+// ===============================
+// INITIAL UI
+// ===============================
+
+updateUI();
+
+updateNextPreview();
+
+updateHoldPreview();
 
 console.log(
-    "BLOCKDROP Commit 7 loaded successfully."
+    "BLOCKDROP game engine loaded successfully."
 );
