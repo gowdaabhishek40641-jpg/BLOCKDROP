@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>BLOCKDROP</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -16,117 +18,420 @@
 
     <!-- HEADER -->
     <header class="topbar">
+
         <div class="brand">
-            <div class="brand-icon">◆</div>
-            <div>
-                <h1>BLOCK<span>DROP</span></h1>
-                <p>DROP • STACK • MASTER</p>
+
+            <div class="brand-icon">
+                ◆
             </div>
+
+            <div>
+                <h1>
+                    BLOCK<span>DROP</span>
+                </h1>
+
+                <p>
+                    DROP • STACK • MASTER
+                </p>
+            </div>
+
         </div>
 
         <div class="header-status">
+
             <div class="status-dot"></div>
-            <span>GAME READY</span>
+
+            <span>
+                GAME READY
+            </span>
+
         </div>
+
     </header>
+
 
     <!-- MAIN -->
     <main class="game-layout">
 
+
         <!-- LEFT PANEL -->
         <aside class="side-panel left-panel">
 
+
+            <!-- NEXT -->
             <div class="panel-card">
-                <div class="panel-title">NEXT</div>
+
+                <div class="panel-title">
+                    NEXT
+                </div>
 
                 <div class="preview-box">
-                    <canvas id="nextCanvas" width="120" height="120"></canvas>
+
+                    <canvas
+                        id="nextCanvas"
+                        width="120"
+                        height="120">
+                    </canvas>
+
                 </div>
+
             </div>
 
+
+            <!-- HOLD -->
             <div class="panel-card">
-                <div class="panel-title">HOLD</div>
+
+                <div class="panel-title">
+                    HOLD
+                </div>
 
                 <div class="preview-box">
-                    <canvas id="holdCanvas" width="120" height="120"></canvas>
+
+                    <canvas
+                        id="holdCanvas"
+                        width="120"
+                        height="120">
+                    </canvas>
+
                 </div>
+
             </div>
 
+
+            <!-- CONTROLS -->
             <div class="panel-card">
-                <div class="panel-title">CONTROLS</div>
+
+                <div class="panel-title">
+                    CONTROLS
+                </div>
 
                 <div class="controls-info">
-                    <div><kbd>←</kbd><span>Move</span></div>
-                    <div><kbd>→</kbd><span>Move</span></div>
-                    <div><kbd>↓</kbd><span>Soft Drop</span></div>
-                    <div><kbd>↑</kbd><span>Rotate</span></div>
-                    <div><kbd>SPACE</kbd><span>Hard Drop</span></div>
-                    <div><kbd>C</kbd><span>Hold</span></div>
-                    <div><kbd>P</kbd><span>Pause</span></div>
+
+                    <div>
+                        <kbd>←</kbd>
+                        <span>Move</span>
+                    </div>
+
+                    <div>
+                        <kbd>→</kbd>
+                        <span>Move</span>
+                    </div>
+
+                    <div>
+                        <kbd>↓</kbd>
+                        <span>Soft Drop</span>
+                    </div>
+
+                    <div>
+                        <kbd>↑</kbd>
+                        <span>Rotate</span>
+                    </div>
+
+                    <div>
+                        <kbd>SPACE</kbd>
+                        <span>Hard Drop</span>
+                    </div>
+
+                    <div>
+                        <kbd>C</kbd>
+                        <span>Hold</span>
+                    </div>
+
+                    <div>
+                        <kbd>P</kbd>
+                        <span>Pause</span>
+                    </div>
+
                 </div>
+
             </div>
 
         </aside>
 
+
+
         <!-- GAME -->
         <section class="game-section">
 
+
+            <!-- STATS -->
             <div class="game-header">
 
                 <div class="stat">
-                    <span>SCORE</span>
-                    <strong id="score">0</strong>
+
+                    <span>
+                        SCORE
+                    </span>
+
+                    <strong id="score">
+                        0
+                    </strong>
+
                 </div>
 
-                <div class="stat">
-                    <span>LEVEL</span>
-                    <strong id="level">1</strong>
-                </div>
 
                 <div class="stat">
-                    <span>LINES</span>
-                    <strong id="lines">0</strong>
+
+                    <span>
+                        LEVEL
+                    </span>
+
+                    <strong id="level">
+                        1
+                    </strong>
+
                 </div>
 
+
                 <div class="stat">
-                    <span>COMBO</span>
-                    <strong id="combo">0</strong>
+
+                    <span>
+                        LINES
+                    </span>
+
+                    <strong id="lines">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="stat">
+
+                    <span>
+                        COMBO
+                    </span>
+
+                    <strong id="combo">
+                        0
+                    </strong>
+
                 </div>
 
             </div>
 
+
+
+            <!-- MODE INFO -->
+            <div class="mode-hud">
+
+                <div>
+
+                    <span>
+                        MODE
+                    </span>
+
+                    <strong id="currentMode">
+                        CLASSIC
+                    </strong>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        DIFFICULTY
+                    </span>
+
+                    <strong id="currentDifficulty">
+                        NORMAL
+                    </strong>
+
+                </div>
+
+                <div
+                    id="timerBox"
+                    class="timer-box hidden">
+
+                    <span>
+                        TIME
+                    </span>
+
+                    <strong id="timer">
+                        02:00
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- GAME CANVAS -->
             <div class="canvas-wrapper">
 
-                <canvas id="gameCanvas" width="300" height="600"></canvas>
+                <canvas
+                    id="gameCanvas"
+                    width="300"
+                    height="600">
+                </canvas>
 
-                <!-- START OVERLAY -->
-                <div id="overlay" class="overlay active">
+
+                <!-- OVERLAY -->
+                <div
+                    id="overlay"
+                    class="overlay active">
 
                     <div class="overlay-content">
 
+
                         <div class="game-logo">
-                            <span>BLOCK</span><b>DROP</b>
+
+                            <span>
+                                BLOCK
+                            </span>
+
+                            <b>
+                                DROP
+                            </b>
+
                         </div>
+
 
                         <p class="tagline">
                             BUILD YOUR STACK
                         </p>
 
-                        <button id="startBtn" class="primary-btn">
-                            <span>▶</span>
+
+
+                        <!-- MODE SELECT -->
+                        <div class="selection-section">
+
+                            <div class="selection-title">
+                                GAME MODE
+                            </div>
+
+                            <div class="selection-grid">
+
+                                <button
+                                    class="select-btn active"
+                                    data-mode="classic">
+
+                                    <strong>
+                                        CLASSIC
+                                    </strong>
+
+                                    <small>
+                                        Standard
+                                    </small>
+
+                                </button>
+
+
+                                <button
+                                    class="select-btn"
+                                    data-mode="time">
+
+                                    <strong>
+                                        TIME ATTACK
+                                    </strong>
+
+                                    <small>
+                                        2 Minutes
+                                    </small>
+
+                                </button>
+
+
+                                <button
+                                    class="select-btn"
+                                    data-mode="endless">
+
+                                    <strong>
+                                        ENDLESS
+                                    </strong>
+
+                                    <small>
+                                        Infinite
+                                    </small>
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- DIFFICULTY -->
+                        <div class="selection-section">
+
+                            <div class="selection-title">
+                                DIFFICULTY
+                            </div>
+
+                            <div class="difficulty-grid">
+
+                                <button
+                                    class="difficulty-btn active"
+                                    data-difficulty="normal">
+
+                                    NORMAL
+
+                                </button>
+
+                                <button
+                                    class="difficulty-btn"
+                                    data-difficulty="hard">
+
+                                    HARD
+
+                                </button>
+
+                                <button
+                                    class="difficulty-btn"
+                                    data-difficulty="insane">
+
+                                    INSANE
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- START -->
+                        <button
+                            id="startBtn"
+                            class="primary-btn">
+
+                            <span>
+                                ▶
+                            </span>
+
                             START GAME
+
                         </button>
 
-                        <button id="restartBtn" class="secondary-btn hidden">
+
+                        <!-- RESTART -->
+                        <button
+                            id="restartBtn"
+                            class="secondary-btn hidden">
+
                             ↻ RESTART
+
                         </button>
 
-                        <button id="resumeBtn" class="secondary-btn hidden">
+
+                        <!-- RESUME -->
+                        <button
+                            id="resumeBtn"
+                            class="secondary-btn hidden">
+
                             ▶ RESUME
+
                         </button>
 
-                        <p id="overlayMessage" class="overlay-message">
+
+                        <p
+                            id="overlayMessage"
+                            class="overlay-message">
+
                             Ready when you are.
+
                         </p>
 
                     </div>
@@ -135,96 +440,189 @@
 
             </div>
 
-            <!-- GAME ACTIONS -->
+
+
+            <!-- ACTIONS -->
             <div class="game-actions">
 
-                <button id="pauseBtn" class="action-btn">
+                <button
+                    id="pauseBtn"
+                    class="action-btn">
+
                     ⏸ PAUSE
+
                 </button>
 
-                <button id="restartGameBtn" class="action-btn">
+
+                <button
+                    id="restartGameBtn"
+                    class="action-btn">
+
                     ↻ RESTART
+
                 </button>
 
             </div>
 
-            <!-- MOBILE CONTROLS -->
+
+
+            <!-- MOBILE -->
             <div class="mobile-controls">
 
-                <button id="leftBtn">←</button>
-                <button id="rotateBtn">↻</button>
-                <button id="rightBtn">→</button>
+                <button id="leftBtn">
+                    ←
+                </button>
 
-                <button id="holdBtn">HOLD</button>
-                <button id="downBtn">↓</button>
-                <button id="dropBtn">DROP</button>
+                <button id="rotateBtn">
+                    ↻
+                </button>
+
+                <button id="rightBtn">
+                    →
+                </button>
+
+                <button id="holdBtn">
+                    HOLD
+                </button>
+
+                <button id="downBtn">
+                    ↓
+                </button>
+
+                <button id="dropBtn">
+                    DROP
+                </button>
 
             </div>
 
         </section>
 
+
+
         <!-- RIGHT PANEL -->
         <aside class="side-panel right-panel">
 
-            <div class="panel-card score-card">
 
-                <div class="panel-title">PLAYER</div>
+            <!-- PLAYER -->
+            <div class="panel-card">
+
+                <div class="panel-title">
+                    PLAYER
+                </div>
 
                 <div class="player-name">
                     PLAYER 01
                 </div>
 
                 <div class="xp-label">
-                    <span>LEVEL XP</span>
-                    <span id="xpText">0 / 100</span>
+
+                    <span>
+                        LEVEL XP
+                    </span>
+
+                    <span id="xpText">
+                        0 / 100
+                    </span>
+
                 </div>
 
                 <div class="xp-bar">
+
                     <div id="xpBar"></div>
+
                 </div>
 
             </div>
 
+
+
+            <!-- BEST SCORE -->
             <div class="panel-card">
 
-                <div class="panel-title">BEST SCORE</div>
+                <div class="panel-title">
+                    BEST SCORE
+                </div>
 
-                <div class="best-score" id="highScore">
+                <div
+                    class="best-score"
+                    id="highScore">
+
                     0
+
                 </div>
 
             </div>
 
+
+
+            <!-- STATUS -->
             <div class="panel-card">
 
-                <div class="panel-title">STATUS</div>
-
-                <div class="status-row">
-                    <span>MODE</span>
-                    <strong id="gameStatus">READY</strong>
+                <div class="panel-title">
+                    STATUS
                 </div>
 
                 <div class="status-row">
-                    <span>SPEED</span>
-                    <strong id="speedStatus">NORMAL</strong>
+
+                    <span>
+                        MODE
+                    </span>
+
+                    <strong id="gameStatus">
+                        READY
+                    </strong>
+
+                </div>
+
+
+                <div class="status-row">
+
+                    <span>
+                        SPEED
+                    </span>
+
+                    <strong id="speedStatus">
+                        NORMAL
+                    </strong>
+
+                </div>
+
+
+                <div class="status-row">
+
+                    <span>
+                        BEST
+                    </span>
+
+                    <strong id="modeBestScore">
+                        0
+                    </strong>
+
                 </div>
 
             </div>
 
+
+
+            <!-- MISSION -->
             <div class="panel-card tips-card">
 
-                <div class="panel-title">MISSION</div>
+                <div class="panel-title">
+                    MISSION
+                </div>
 
                 <p>
                     Clear lines and survive as long as possible.
                 </p>
 
                 <div class="mission-progress">
+
                     <div id="missionBar"></div>
+
                 </div>
 
                 <small id="missionText">
-                    Clear 10 lines
+                    Clear 10 more lines
                 </small>
 
             </div>
@@ -233,13 +631,27 @@
 
     </main>
 
+
+
+    <!-- FOOTER -->
     <footer>
-        <span>BLOCKDROP</span>
-        <span>HTML • CSS • JAVASCRIPT</span>
-        <span>v1.0</span>
+
+        <span>
+            BLOCKDROP
+        </span>
+
+        <span>
+            HTML • CSS • JAVASCRIPT
+        </span>
+
+        <span>
+            COMMIT 10
+        </span>
+
     </footer>
 
 </div>
+
 
 <script src="game.js"></script>
 
