@@ -2483,3 +2483,335 @@ drawPreviews();
 console.log(
     "BLOCKDROP Commit 10 loaded successfully."
 );
+/* ==========================================
+   COMMIT 11: ACHIEVEMENTS & LEADERBOARD
+   ========================================== */
+
+(() => {
+    "use strict";
+
+    const STORAGE = {
+        name: "blockdropPlayerName",
+        scores: "blockdropLeaderboardV11",
+        achievements: "blockdropAchievementsV11",
+        games: "blockdropGamesPlayedV11"
+    };
+
+    const achievements = [
+        {
+            id: "first_game",
+            title: "First Drop",
+            description: "Finish your first game.",
+            icon: "🎮",
+            check: stats => stats.games >= 1
+        },
+        {
+            id: "score_1000",
+            title: "Score Hunter",
+            description: "Reach a score of 1,000.",
+            icon: "🎯",
+            check: stats => stats.bestScore >= 1000
+        },
+        {
+            id: "score_5000",
+            title: "High Scorer",
+            description: "Reach a score of 5,000.",
+            icon: "⚡",
+            check: stats => stats.bestScore >= 5000
+        },
+        {
+            id: "lines_10",
+            title: "Line Breaker",
+            description: "Clear 10 lines in a game.",
+            icon: "🧱",
+            check: stats => stats.bestLines >= 10
+        },
+        {
+            id: "lines_50",
+            title: "Master Stacker",
+            description: "Clear 50 lines in a game.",
+            icon: "👑",
+            check: stats => stats.bestLines >= 50
+        },
+        {
+            id: "games_10",
+            title: "Dedicated Player",
+            description: "Finish 10 games.",
+            icon: "🏅",
+            check: stats => stats.games >= 10
+        }
+    ];
+
+    function readJSON(key, fallback) {
+        try {
+            const value = JSON.parse(localStorage.getItem(key));
+            return value ?? fallback;
+        } catch {
+            return fallback;
+        }
+    }
+
+    function getName() {
+        return (
+            localStorage.getItem(STORAGE.name) ||
+            "PLAYER 01"
+        ).slice(0, 16);
+    }
+
+    function getLeaderboard() {
+        const value = readJSON(STORAGE.scores, []);
+        return Array.isArray(value) ? value : [];
+    }
+
+    function getUnlocked() {
+        const value = readJSON(STORAGE.achievements, []);
+        return Array.isArray(value) ? value : [];
+    }
+
+    function renderAchievements() {
+        const container = document.getElementById("achievementList");
+        if (!container) return;
+
+        const unlocked = getUnlocked();
+
+        container.replaceChildren();
+
+        achievements.forEach(item => {
+            const isUnlocked = unlocked.includes(item.id);
+
+            const row = document.createElement("article");
+            row.className =
+                `achievement-item ${isUnlocked ? "unlocked" : "locked"}`;
+
+            const icon = document.createElement("div");
+            icon.className = "achievement-icon";
+            icon.textContent = isUnlocked ? item.icon : "🔒";
+
+            const details = document.createElement("div");
+
+            const title = document.createElement("h3");
+            title.textContent =
+                `${item.title}${isUnlocked ? " ✓" : ""}`;
+
+            const description = document.createElement("p");
+            description.textContent = item.description;
+
+            details.append(title, description);
+            row.append(icon, details);
+            container.appendChild(row);
+        });
+    }
+
+    function renderLeaderboard() {
+        const container = document.getElementById("leaderboardList");
+        if (!container) return;
+
+        const scores = getLeaderboard();
+        container.replaceChildren();
+
+        if (scores.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "leaderboard-empty";
+            empty.textContent =
+                "No scores yet. Finish a game to enter the leaderboard.";
+            container.appendChild(empty);
+            return;
+        }
+
+        scores.forEach((entry, index) => {
+            const row = document.createElement("div");
+            row.className = "leaderboard-row";
+
+            const rank = document.createElement("span");
+            rank.className = "leaderboard-rank";
+            rank.textContent = `#${index + 1}`;
+
+            const player = document.createElement("div");
+            player.className = "leaderboard-player";
+
+            const name = document.createElement("strong");
+            name.textContent = entry.name;
+
+            const details = document.createElement("small");
+            details.textContent =
+                `${entry.mode} · ${entry.difficulty}`;
+
+            const score = document.createElement("span");
+            score.className = "leaderboard-score";
+            score.textContent =
+                Number(entry.score).toLocaleString();
+
+            player.append(name, details);
+            row.append(rank, player, score);
+            container.appendChild(row);
+        });
+    }
+
+    function showAchievementToast(item) {
+        const toast = document.createElement("div");
+        toast.className = "achievement-toast";
+
+        const title = document.createElement("strong");
+        title.textContent = `🏆 Achievement unlocked: ${item.title}`;
+
+        const description = document.createElement("span");
+        description.textContent = item.description;
+
+        toast.append(title, description);
+        document.body.appendChild(toast);
+
+        window.setTimeout(() => toast.remove(), 3500);
+    }
+
+    function evaluateAchievements(stats) {
+        const unlocked = getUnlocked();
+        let changed = false;
+
+        achievements.forEach(item => {
+            if (!unlocked.includes(item.id) && item.check(stats)) {
+                unlocked.push(item.id);
+                changed = true;
+                showAchievementToast(item);
+            }
+        });
+
+        if (changed) {
+            localStorage.setItem(
+                STORAGE.achievements,
+                JSON.stringify(unlocked)
+            );
+        }
+
+        renderAchievements();
+    }
+
+    function recordFinishedGame() {
+        const scoreValue = Number(
+            document.getElementById("score")?.textContent
+                ?.replace(/,/g, "") || 0
+        );
+
+        const linesValue = Number(
+            document.getElementById("lines")?.textContent || 0
+        );
+
+        const games =
+            Number(localStorage.getItem(STORAGE.games) || 0) + 1;
+
+        localStorage.setItem(STORAGE.games, String(games));
+
+        const mode =
+            document.getElementById("currentMode")?.textContent ||
+            "CLASSIC";
+
+        const difficulty =
+            document.getElementById("currentDifficulty")?.textContent ||
+            "NORMAL";
+
+        const scores = getLeaderboard();
+
+        scores.push({
+            name: getName(),
+            score: Math.max(0, scoreValue),
+            lines: Math.max(0, linesValue),
+            mode,
+            difficulty,
+            date: new Date().toISOString()
+        });
+
+        scores.sort((a, b) => b.score - a.score);
+
+        localStorage.setItem(
+            STORAGE.scores,
+            JSON.stringify(scores.slice(0, 10))
+        );
+
+        const previousStats = readJSON("blockdropAchievementStatsV11", {
+            bestScore: 0,
+            bestLines: 0
+        });
+
+        const stats = {
+            games,
+            bestScore: Math.max(
+                previousStats.bestScore,
+                scoreValue
+            ),
+            bestLines: Math.max(
+                previousStats.bestLines,
+                linesValue
+            )
+        };
+
+        localStorage.setItem(
+            "blockdropAchievementStatsV11",
+            JSON.stringify({
+                bestScore: stats.bestScore,
+                bestLines: stats.bestLines
+            })
+        );
+
+        evaluateAchievements(stats);
+        renderLeaderboard();
+    }
+
+    const nameInput = document.getElementById("playerNameInput");
+    const saveNameButton = document.getElementById("savePlayerNameBtn");
+    const clearButton = document.getElementById("clearLeaderboardBtn");
+
+    if (nameInput) {
+        nameInput.value = getName();
+    }
+
+    if (saveNameButton && nameInput) {
+        saveNameButton.addEventListener("click", () => {
+            const name = nameInput.value.trim().slice(0, 16);
+
+            if (!name) {
+                nameInput.focus();
+                return;
+            }
+
+            localStorage.setItem(STORAGE.name, name);
+            nameInput.value = name;
+            renderLeaderboard();
+        });
+    }
+
+    if (clearButton) {
+        clearButton.addEventListener("click", () => {
+            const confirmed = window.confirm(
+                "Clear all leaderboard scores? This cannot be undone."
+            );
+
+            if (!confirmed) return;
+
+            localStorage.removeItem(STORAGE.scores);
+            renderLeaderboard();
+        });
+    }
+
+    /*
+     * Integrate with the existing endGame function without
+     * replacing the game's original game-over behavior.
+     */
+    if (typeof window.endGame === "function") {
+        const originalEndGame = window.endGame;
+
+        window.endGame = function (...args) {
+            const wasRunning = window.gameRunning;
+            const result = originalEndGame.apply(this, args);
+
+            if (wasRunning) {
+                recordFinishedGame();
+            }
+
+            return result;
+        };
+    }
+
+    renderAchievements();
+    renderLeaderboard();
+
+    console.log("BLOCKDROP Commit 11 features loaded.");
+})();

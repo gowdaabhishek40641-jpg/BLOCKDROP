@@ -628,10 +628,53 @@
             </div>
 
         </aside>
+        <!-- COMMIT 11: ACHIEVEMENTS & LEADERBOARD -->
+<section class="progress-dashboard">
 
+    <div class="dashboard-card">
+        <div class="dashboard-heading">
+            <span>🏆</span>
+            <div>
+                <h2>Achievements</h2>
+                <p>Complete challenges to unlock rewards.</p>
+            </div>
+        </div>
+
+        <div id="achievementList" class="achievement-list"></div>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="dashboard-heading">
+            <span>👑</span>
+            <div>
+                <h2>Leaderboard</h2>
+                <p>Your best scores saved on this device.</p>
+            </div>
+        </div>
+
+        <div class="leaderboard-controls">
+            <input
+                id="playerNameInput"
+                type="text"
+                maxlength="16"
+                placeholder="Enter player name"
+                aria-label="Player name"
+            >
+
+            <button id="savePlayerNameBtn" type="button">
+                SAVE NAME
+            </button>
+        </div>
+
+        <div id="leaderboardList" class="leaderboard-list"></div>
+
+        <button id="clearLeaderboardBtn" class="clear-leaderboard" type="button">
+            CLEAR LEADERBOARD
+        </button>
+    </div>
+
+</section>
     </main>
-
-
 
     <!-- FOOTER -->
     <footer>
